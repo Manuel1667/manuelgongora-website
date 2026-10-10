@@ -900,7 +900,7 @@ function compositionMature(now){
  // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
  return now>=finishAt;
 }
-function finishWork(now){/* Sin Liquify global al cierre. Si el evento de firma no alcanzó a ejecutarse por tiempo, se resuelve aquí respetando exactamente el 80%. */if(phase!=='paint')return;strokeQueue=[];drawPersonalFinalSeals();exactSealDone=true;if(!crossDaggerDone){crossDaggerDone=true;(void 0);}phase='hold';phaseAt=now}
+function finishWork(now){/* Sin Liquify global al cierre. Si el evento de firma no alcanzó a ejecutarse por tiempo, se resuelve aquí respetando exactamente el 80%. */if(phase!=='paint')return;drawPersonalFinalSeals();exactSealDone=true;if(!crossDaggerDone){crossDaggerDone=true;(void 0);}phase='hold';phaseAt=now}
 function tick(now){if(finalLiquifyPhase&&animateFinalLiquify(performance.now()))return;
  if(paused){requestAnimationFrame(tick);return}
 if(phase==='hold'){beginWork();requestAnimationFrame(tick);return}let remain=finishAt-now;remainNow=remain;
@@ -910,19 +910,19 @@ if(elapsed<totalDur*.50&&massAreas.length&&whiteFormCount<whiteFormTarget&&Math.
 // Humanoides negros pueden aparecer durante el 75% inicial de la obra.
 if(elapsed<totalDur*.75&&Math.random()<.018){let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.10,W*.90),R(H*.15,H*.85),R(S*.07,S*.25),R(-1.15,1.15),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}
 if(!personalSealsDone&&remain<=700){
- strokeQueue=[];drawPersonalFinalSeals();
+ drawPersonalFinalSeals();
 }
 if(!crossDaggerDone && remain<=500){
   crossDaggerDone=true;
   (void 0);
 }
 
-if(elapsed>=totalDur*.42&&elapsed<totalDur*.78&&!extraBlackHairDone){extraBlackHairDone=true;extraHairOnBlackForms();}
+if(elapsed>=totalDur*.24&&!extraBlackHairDone){extraBlackHairDone=true;extraHairOnBlackForms();}
 
 // El negro se equilibra durante la creación; no se fuerza un porcentaje negro al final.
 
-if(remain<=600&&!balanceDetailDone)balanceOppositeDetail();
-if(remain<=650&&!finalDetailsDone){strokeQueue=[];addFinalConceptElements()}
+if(elapsed>=totalDur*.52&&!balanceDetailDone)balanceOppositeDetail();
+if(elapsed>=totalDur*.68&&!finalDetailsDone){strokeQueue=[];addFinalConceptElements()}
 if(remain<=250&&!exactSealDone){exactSealDone=true;}
 if(now>=nextThoughtShift){
  let rp=Math.random();
@@ -933,7 +933,7 @@ if(now>=nextThoughtShift){
  nextThoughtShift=now+(Math.random()<.30?R(4200,8500)*EXECUTION_SLOW:R(1400,4800)*EXECUTION_SLOW);
 }
 if(now>=nextTempoShift){let rp=Math.random();if(rp<.18)tempo=R(1.7,2.8);else if(rp<.48)tempo=R(3.0,4.8);else if(rp<.80)tempo=R(5.0,7.4);else tempo=R(7.8,11.5);nextTempoShift=now+R(1800,8500)*EXECUTION_SLOW}
-paintStrokeFrame(16.7);if(remain>450&&now>=nextAction&&strokeQueue.length<180){let burst=Math.random()<.82?(R(5,12)|0):R(2,5)|0;while(burst--&&strokeQueue.length<180){gesture();actionsDone++;strokesSinceLiquify++;if(strokesSinceLiquify>=nextLiquifyAt && actionsDone>16 && strokeQueue.length<100){if(Math.random()<.66)sculptMassLiquify();else liquify(R(.012,.032));strokesSinceLiquify=0;nextLiquifyAt=R(2,4)|0}}nextAction=now+((R(4,24)/clamp(tempo,1.2,7.5))/thinkingPace)*EXECUTION_SLOW}if(remain>450&&actionsDone>minActions*.55&&Math.random()<.018&&profile.connectors>0){connector();profile.connectors--;actionsDone++}if(remain>450&&actionsDone>minActions*.35&&Math.random()<.007&&profile.planes>0){if(Math.random()<.85){(void 0);}profile.planes--;actionsDone++;if(Math.random()<.82)sculptMassLiquify()}if(compositionMature(now))finishWork(now);requestAnimationFrame(tick)}
+paintStrokeFrame(16.7);if(remain>120&&now>=nextAction&&strokeQueue.length<180){let burst=Math.random()<.82?(R(5,12)|0):R(2,5)|0;while(burst--&&strokeQueue.length<180){gesture();actionsDone++;strokesSinceLiquify++;if(strokesSinceLiquify>=nextLiquifyAt && actionsDone>16 && strokeQueue.length<100){if(Math.random()<.66)sculptMassLiquify();else liquify(R(.012,.032));strokesSinceLiquify=0;nextLiquifyAt=R(2,4)|0}}nextAction=now+((R(4,24)/clamp(tempo,1.2,7.5))/thinkingPace)*EXECUTION_SLOW}if(remain>120&&actionsDone>minActions*.55&&Math.random()<.018&&profile.connectors>0){connector();profile.connectors--;actionsDone++}if(remain>120&&actionsDone>minActions*.35&&Math.random()<.007&&profile.planes>0){if(Math.random()<.85){(void 0);}profile.planes--;actionsDone++;if(Math.random()<.82)sculptMassLiquify()}if(compositionMature(now))finishWork(now);requestAnimationFrame(tick)}
 async function infinitoFullScreen(){
  if(document.fullscreenElement)return;
  try{await document.documentElement.requestFullscreen()}catch(e){}
