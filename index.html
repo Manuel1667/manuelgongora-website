@@ -1411,6 +1411,23 @@ select.nav-lang{
   #art-lightbox #lightbox-img{margin-left:auto!important;margin-right:auto!important;}
 }
 </style>
+
+<style id="gongora-requested-only-10oct">
+/* Requested only: keep the site from sliding beneath GÓNGORA. */
+header{background:#fff!important;}
+.hero,section.content{scroll-margin-top:110px;}
+
+@media (min-width:761px){
+  /* Windows only: GÓNGORA 25% smaller. */
+  header .brand strong{font-size:clamp(27px,3.9vw,57px)!important;}
+  /* Windows only: INFINITO 5% smaller. */
+  #infinito .box,#infinito .caption{width:min(83.6vw,1609px)!important;}
+}
+@media (max-width:760px){
+  .hero,section.content{scroll-margin-top:88px;}
+}
+</style>
+
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
