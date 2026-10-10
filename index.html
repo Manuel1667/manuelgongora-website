@@ -1353,50 +1353,6 @@ select.nav-lang{
   #series .series-card-copy>strong{font:400 24px/1.05 Georgia,serif!important}
 }
 
-
-/* 2026-10-10 — requested Home refinements, desktop only */
-@media(min-width:761px){
-  /* Living artwork approximately 10% larger than the previous 80vw presentation. */
-  #infinito .box{width:min(88vw,1694px)!important;}
-  #infinito .caption{width:min(88vw,1694px)!important;}
-
-  /* Manuel Góngora + short Home biography approximately 40% smaller. */
-  #bio.bio-under-work .bio-inline{
-    font-size:clamp(10.2px,1.08vw,16.2px)!important;
-    line-height:1.35!important;
-  }
-  #bio.bio-under-work .bio-name{
-    font-size:2em!important;
-    line-height:1!important;
-  }
-}
-
-/* 2026-10-10 — phone artwork viewer: swipe, no side arrows, centered live artwork */
-@media(max-width:760px){
-  .lightbox-nav{display:none!important;}
-  .lightbox{padding-left:16px!important;padding-right:16px!important;}
-  .lightbox-wrap{
-    width:100%!important;
-    max-width:100%!important;
-    margin:0 auto!important;
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:center!important;
-    justify-content:center!important;
-  }
-  .lightbox-live{
-    width:88vw!important;
-    max-width:88vw!important;
-    margin-left:auto!important;
-    margin-right:auto!important;
-    transform:none!important;
-  }
-  .lightbox img{
-    margin-left:auto!important;
-    margin-right:auto!important;
-  }
-}
-
 </style>
 <style>
 .series-selection-note{margin:42px auto 10px;padding:0 18px;max-width:980px;text-align:center;font:400 16px/1.55 Georgia,serif;letter-spacing:.01em;color:#555}
@@ -1433,44 +1389,28 @@ select.nav-lang{
 }
 </script>
 
-<meta name="application-name" content="Manuel Góngora"/>
-<meta name="subject" content="Contemporary art, digital painting, abstract art, generative art and Artificial Intelligence"/>
-<meta name="classification" content="Art, Digital Art, Contemporary Art, Abstract Painting, Generative Art"/>
 <script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@graph":[
-    {
-      "@type":"WebSite",
-      "@id":"https://manuelgongora.com/#website",
-      "url":"https://manuelgongora.com/",
-      "name":"Manuel Góngora",
-      "alternateName":"Manuel Gongora",
-      "inLanguage":["en","es","fr","it","pt"]
-    },
-    {
-      "@type":"CollectionPage",
-      "@id":"https://manuelgongora.com/#artwork",
-      "url":"https://manuelgongora.com/",
-      "name":"Manuel Góngora — Artworks and INFINITO",
-      "isPartOf":{"@id":"https://manuelgongora.com/#website"},
-      "about":{"@id":"https://manuelgongora.com/#artist"},
-      "keywords":"Cuban artist, Cuban-American artist, digital artist, abstract painting, contemporary art, generative art, artificial intelligence art, artista cubano, artista digital, pintura abstracta, arte generativo"
-    },
-    {
-      "@type":"Person",
-      "@id":"https://manuelgongora.com/#artist",
-      "name":"Manuel Góngora",
-      "alternateName":"Manuel Gongora",
-      "url":"https://manuelgongora.com/",
-      "jobTitle":"Artist",
-      "knowsAbout":["Digital art","Digital painting","Abstract painting","Surreal art","Contemporary art","Artificial intelligence art","Generative art","INFINITO"]
-    }
-  ]
-}
+{"@context":"https://schema.org","@type":"WebSite","name":"Manuel Góngora","alternateName":"Manuel Gongora","url":"https://manuelgongora.com/","inLanguage":["en","es","fr","it","pt"]}
 </script>
-
 <!-- End SEO Metadata -->
+
+<style id="gongora-final-fixes-10oct">
+/* Requested fixes — intentionally last so older rules cannot override them. */
+@media (min-width:761px){
+  #infinito .box{width:min(88vw,1694px)!important;}
+  #infinito .caption{width:min(88vw,1694px)!important;}
+  #bio.bio-under-work .bio-inline{font-size:clamp(10px,1.08vw,16px)!important;line-height:1.35!important;}
+  #bio.bio-under-work .bio-name{font-size:2em!important;line-height:1!important;}
+}
+@media (max-width:760px){
+  #art-lightbox .lightbox-nav{display:none!important;}
+  #art-lightbox{padding-left:12px!important;padding-right:12px!important;}
+  #art-lightbox .lightbox-wrap{width:100%!important;max-width:100%!important;margin:0 auto!important;text-align:center!important;}
+  #art-lightbox .lightbox-live{display:none;width:88vw!important;max-width:88vw!important;height:70vh!important;margin:0 auto!important;position:relative!important;left:auto!important;right:auto!important;transform:none!important;}
+  #art-lightbox.live-mode .lightbox-live{display:block!important;}
+  #art-lightbox #lightbox-img{margin-left:auto!important;margin-right:auto!important;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -2274,28 +2214,25 @@ document.addEventListener('click',e=>{
 
 if(lightboxPrev) lightboxPrev.addEventListener('click',e=>{e.stopPropagation();moveLightbox(-1);});
 if(lightboxNext) lightboxNext.addEventListener('click',e=>{e.stopPropagation();moveLightbox(1);});
-
-/* 2026-10-10 — phone swipe navigation for enlarged artworks */
-let lightboxTouchStartX=0, lightboxTouchStartY=0, lightboxSwipeConsumed=false;
+let mobileSwipeStartX=0, mobileSwipeStartY=0, mobileSwipeJustMoved=false;
 lightbox.addEventListener('touchstart',e=>{
-  if(window.innerWidth>760 || !lightbox.classList.contains('open') || e.touches.length!==1) return;
-  lightboxTouchStartX=e.touches[0].clientX;
-  lightboxTouchStartY=e.touches[0].clientY;
-  lightboxSwipeConsumed=false;
+  if(window.innerWidth>760 || e.touches.length!==1) return;
+  mobileSwipeStartX=e.touches[0].clientX;
+  mobileSwipeStartY=e.touches[0].clientY;
 },{passive:true});
 lightbox.addEventListener('touchend',e=>{
-  if(window.innerWidth>760 || !lightbox.classList.contains('open') || !e.changedTouches.length) return;
-  const dx=e.changedTouches[0].clientX-lightboxTouchStartX;
-  const dy=e.changedTouches[0].clientY-lightboxTouchStartY;
+  if(window.innerWidth>760 || !e.changedTouches.length) return;
+  const dx=e.changedTouches[0].clientX-mobileSwipeStartX;
+  const dy=e.changedTouches[0].clientY-mobileSwipeStartY;
   if(Math.abs(dx)>=45 && Math.abs(dx)>Math.abs(dy)*1.15){
-    lightboxSwipeConsumed=true;
+    mobileSwipeJustMoved=true;
     moveLightbox(dx<0?1:-1);
-    setTimeout(()=>{lightboxSwipeConsumed=false;},250);
+    setTimeout(()=>mobileSwipeJustMoved=false,300);
   }
 },{passive:true});
 
 lightbox.addEventListener('click',e=>{
-  if(lightboxSwipeConsumed) return;
+  if(mobileSwipeJustMoved) return;
   if(e.target.closest('.lightbox-nav') || e.target.closest('.lightbox-close-btn')) return;
   goBackFromArtworkPage();
 });
