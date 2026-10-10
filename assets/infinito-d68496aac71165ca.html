@@ -354,10 +354,11 @@ function drawOrganicHairStroke(points,width,reverse=null,onDone=null){
 function queueHairStroke(points,width,onDone=null){
  if(!points||points.length<2){if(onDone)onDone();return}
  let reverse=Math.random()<.22;
+  let bodyBoost=Math.random()<.25?R(1.25,2.5):1;
  let startBlackness=Math.random()<.58?R(.82,1.0):R(.56,.66);
  let darkTone=Math.round(255*(1-startBlackness)),lightTone=R(228,252)|0;
  strokeQueue.push({points,i:1,width:Math.max(.12,width),speed:R(1.0,1.8),carry:0,
-   pressure:true,seed:R(0,20),onDone,hair:true,reverse,
+   pressure:true,seed:R(0,20),onDone,hair:true,reverse,bodyBoost,
    startTone:reverse?lightTone:darkTone,endTone:reverse?darkTone:lightTone});
 }
 function paintStrokeFrame(dt){
@@ -373,7 +374,7 @@ function paintStrokeFrame(dt){
    g.lineCap='round';g.lineJoin='round';
    if(q.hair){
     let ease=tm*tm*(3-2*tm),tone=Math.round(q.startTone+(q.endTone-q.startTone)*ease);
-    let thick=Math.max(.34,q.width*2.45),thin=Math.max(.08,q.width*.20);
+    let thick=Math.max(.34,q.width*2.45*(q.bodyBoost||1)),thin=Math.max(.08,q.width*.20);
     let body=q.reverse?(thin+(thick-thin)*Math.pow(tm,.72)):(thick+(thin-thick)*Math.pow(tm,.72));
     let rootShape=Math.sin(Math.min(1,tm/.10)*Math.PI*.5);
     let tipShape=Math.sin(Math.min(1,(1-tm)/.08)*Math.PI*.5);
@@ -915,7 +916,7 @@ async function saveCurrentFrameHQ(){
  try{let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}catch(e){}
 }
 async function downloadShot(){await downloadShotHQ()}
-function beginWork(){personalSealWork=Math.random()<.75;personalSealsDone=false;personalSealCount=0;sealSurpriseLarge=Math.random()<.03;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealCount=0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];tempo=8.68;thinkingPace=.72;liquifyRhythm='fast';nextThoughtShift=Infinity;nextTempoShift=Infinity;nextAction=started;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(2,4)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(15000,30000);let dur=finishAt-started;
+function beginWork(){personalSealWork=Math.random()<.75;personalSealsDone=false;personalSealCount=0;sealSurpriseLarge=Math.random()<.03;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealCount=0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];tempo=8.68;thinkingPace=.72;liquifyRhythm='fast';nextThoughtShift=Infinity;nextTempoShift=Infinity;nextAction=started;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(2,4)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(25000,40000);let dur=finishAt-started;
 artistPauseTarget=0;pauseMarks=[];queueInitialBase();if(Math.random()<.86)openingBlackHumanoids();if(dominantLargeWork)if(allowHugeCentralMass)dominantBlackForm();else paintedMass();else if(monolithicPlaneWork)if(allowHugeCentralMass)monolithicBlackPlane();else paintedMass();}
 function compositionMature(now){
  // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
