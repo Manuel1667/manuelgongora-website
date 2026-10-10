@@ -129,7 +129,7 @@ function suggestiveBlackForm(){
  // La distorsión rompe cualquier lectura de vector/símbolo y funde la masa con la pintura.
  liquifyRegion(m.x,m.y,m.w,m.h,R(.16,.32));
  // Pelos nacen de la masa, no se añaden rayas decorativas.
- let hn=R(13,29)|0;for(let h=0;h<hn;h++){let p=all[R(0,all.length)|0],a=R(-Math.PI,Math.PI),L=R(S*.018,S*.075),steps=R(12,25)|0,x=p[0],y=p[1];g.save();g.strokeStyle=`rgba(${R(35,95)|0},${R(35,95)|0},${R(35,95)|0},${R(.55,.90)})`;g.lineWidth=R(.25,1.15);g.lineCap='round';g.beginPath();g.moveTo(x,y);for(let j=1;j<=steps;j++){a+=R(-.06,.06);x+=Math.cos(a)*L/steps;y+=Math.sin(a)*L/steps;g.lineTo(x,y)}g.stroke();g.restore();}
+ let hn=Math.round((R(13,29)|0)*1.5);for(let h=0;h<hn;h++){let p=all[R(0,all.length)|0],a=R(-Math.PI,Math.PI),L=R(S*.018,S*.075),steps=R(12,25)|0,x=p[0],y=p[1];g.save();g.strokeStyle=`rgba(${R(35,95)|0},${R(35,95)|0},${R(35,95)|0},${R(.55,.90)})`;g.lineWidth=R(.25,1.15);g.lineCap='round';g.beginPath();g.moveTo(x,y);for(let j=1;j<=steps;j++){a+=R(-.06,.06);x+=Math.cos(a)*L/steps;y+=Math.sin(a)*L/steps;g.lineTo(x,y)}g.stroke();g.restore();}
 }
 function whiteMysticSpearTips(cx,cy,sc,rot,anchors){
  // Las puntas blancas nacen de la MISMA forma blanca. No se añaden triángulos ni figuras independientes.
@@ -176,7 +176,7 @@ function twistedWhiteHumanoid(cx,cy,sc,rot,color='rgb(255,255,255)',mirror=1){
  // Después del Liquify se trabaja la figura con pelos/filamentos orgánicos.
  let hv=hairGray(),hairColor=color.includes('255')?`rgba(${hv},${hv},${hv},${R(.84,.98)})`:`rgba(${hv},${hv},${hv},${R(.84,.98)})`;
  let hairRoots=[[-.27,-.50],[-.34,-.18],[-.18,.10],[.20,-.36],[.28,.02],[.18,.32],[-.10,.48]];
- let hairN=Math.max(1,Math.round((R(8,18)|0)*.60));
+ let hairN=Math.max(1,Math.round((R(8,18)|0)*.90));
  for(let h=0;h<hairN;h++){
    let root=pick(hairRoots),p=T(root[0]+R(-.08,.08),root[1]+R(-.07,.07));
    let a=rot+R(-2.5,2.5),L=R(sc*.16,sc*.42),steps=R(12,26)|0,pts=[[p[0],p[1]]],x=p[0],y=p[1];
@@ -301,7 +301,7 @@ function whiteThroughBlack(m,force=false,lateFinal=false){
  g.restore();
  if(whiteObjectPts.length){let xs=whiteObjectPts.map(p=>p[0]),ys=whiteObjectPts.map(p=>p[1]),pad=sc*.28,x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H),rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,24,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,24,H-y0);liquifyRegion(x0,y0,rw,rh,R(.08,.12));
  if(lateFinal&&Math.random()<finalBlackBrushChance)finalBlackArtistBrush(x0,y0,rw,rh,sc);
- if(lateFinal){let hn=R(8,18)|0;for(let h=0;h<hn;h++){let hx=R(x0,x0+rw),hy=R(y0,y0+rh),ha=R(-Math.PI,Math.PI),hL=R(S*.025,S*.075),hpts=[[hx,hy]],steps=R(10,22)|0;for(let j=1;j<=steps;j++){ha+=R(-.045,.045);hx+=Math.cos(ha)*hL/steps;hy+=Math.sin(ha)*hL/steps;hpts.push([hx,hy])}queueStroke(hpts,R(.18,.75),`rgba(${R(150,215)|0},${R(150,215)|0},${R(150,215)|0},${R(.82,.98)})`,R(5.0,8.0),false);}}
+ if(lateFinal){let hn=Math.round((R(8,18)|0)*1.5);for(let h=0;h<hn;h++){let hx=R(x0,x0+rw),hy=R(y0,y0+rh),ha=R(-Math.PI,Math.PI),hL=R(S*.025,S*.075),hpts=[[hx,hy]],steps=R(10,22)|0;for(let j=1;j<=steps;j++){ha+=R(-.045,.045);hx+=Math.cos(ha)*hL/steps;hy+=Math.sin(ha)*hL/steps;hpts.push([hx,hy])}queueStroke(hpts,R(.18,.75),`rgba(${R(150,215)|0},${R(150,215)|0},${R(150,215)|0},${R(.82,.98)})`,R(5.0,8.0),false);}}
 }
 }
 function continuousElement(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;if(performance.now()-safeWorkStartedAt>=15000*EXECUTION_SLOW)return;
@@ -354,10 +354,11 @@ function drawOrganicHairStroke(points,width,reverse=null,onDone=null){
 function queueHairStroke(points,width,onDone=null){
  if(!points||points.length<2){if(onDone)onDone();return}
  let reverse=Math.random()<.22;
+  let bodyBoost=Math.random()<.25?R(1.25,2.5):1;
  let startBlackness=Math.random()<.58?R(.82,1.0):R(.56,.66);
  let darkTone=Math.round(255*(1-startBlackness)),lightTone=R(228,252)|0;
  strokeQueue.push({points,i:1,width:Math.max(.12,width),speed:R(1.0,1.8),carry:0,
-   pressure:true,seed:R(0,20),onDone,hair:true,reverse,
+   pressure:true,seed:R(0,20),onDone,hair:true,reverse,bodyBoost,
    startTone:reverse?lightTone:darkTone,endTone:reverse?darkTone:lightTone});
 }
 function paintStrokeFrame(dt){
@@ -369,11 +370,16 @@ function paintStrokeFrame(dt){
   let steps=Math.max(1,Math.round(q.speed*1.35));
   for(let z=0;z<steps && q.i<pts.length;z++,q.i++){
    let i=q.i,p0=pts[i-1],p1=pts[i],t0=(i-1)/(pts.length-1),t=i/(pts.length-1),tm=(t0+t)*.5;
+    if(q.hair){
+      let dx=p1[0]-p0[0],dy=p1[1]-p0[1],ll=Math.hypot(dx,dy)||1,nx=-dy/ll,ny=dx/ll;
+      let amp=Math.max(.35,Math.min(5.5,q.width*1.35)),w0=Math.sin(t0*Math.PI*R(1.15,2.15)+q.seed)*amp,w1=Math.sin(t*Math.PI*R(1.15,2.15)+q.seed)*amp;
+      p0=[p0[0]+nx*w0,p0[1]+ny*w0];p1=[p1[0]+nx*w1,p1[1]+ny*w1];
+    }
    g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';
    g.lineCap='round';g.lineJoin='round';
    if(q.hair){
     let ease=tm*tm*(3-2*tm),tone=Math.round(q.startTone+(q.endTone-q.startTone)*ease);
-    let thick=Math.max(.34,q.width*2.45),thin=Math.max(.08,q.width*.20);
+    let thick=Math.max(.34,q.width*2.45*(q.bodyBoost||1)),thin=Math.max(.08,q.width*.20);
     let body=q.reverse?(thin+(thick-thin)*Math.pow(tm,.72)):(thick+(thin-thick)*Math.pow(tm,.72));
     let rootShape=Math.sin(Math.min(1,tm/.10)*Math.PI*.5);
     let tipShape=Math.sin(Math.min(1,(1-tm)/.08)*Math.PI*.5);
@@ -915,7 +921,7 @@ async function saveCurrentFrameHQ(){
  try{let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}catch(e){}
 }
 async function downloadShot(){await downloadShotHQ()}
-function beginWork(){personalSealWork=Math.random()<.75;personalSealsDone=false;personalSealCount=0;sealSurpriseLarge=Math.random()<.03;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealCount=0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];tempo=6.2;thinkingPace=.72;liquifyRhythm='fast';nextThoughtShift=Infinity;nextTempoShift=Infinity;nextAction=started;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(2,4)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(15000,30000);let dur=finishAt-started;
+function beginWork(){personalSealWork=Math.random()<.70;personalSealsDone=false;personalSealCount=0;sealSurpriseLarge=Math.random()<.03;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealCount=0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];tempo=9.982;thinkingPace=.72;liquifyRhythm='fast';nextThoughtShift=Infinity;nextTempoShift=Infinity;nextAction=started;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(2,4)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(40000,55000);let dur=finishAt-started;
 artistPauseTarget=0;pauseMarks=[];queueInitialBase();if(Math.random()<.86)openingBlackHumanoids();if(dominantLargeWork)if(allowHugeCentralMass)dominantBlackForm();else paintedMass();else if(monolithicPlaneWork)if(allowHugeCentralMass)monolithicBlackPlane();else paintedMass();}
 function compositionMature(now){
  // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
@@ -930,7 +936,7 @@ let elapsed=now-safeWorkStartedAt,totalDur=Math.max(1,finishAt-safeWorkStartedAt
 if(elapsed<totalDur*.50&&massAreas.length&&whiteFormCount<whiteFormTarget&&Math.random()<.055){whiteThroughBlack(pick(massAreas),true,false);}
 // Humanoides negros pueden aparecer durante el 75% inicial de la obra.
 if(elapsed<totalDur*.75&&Math.random()<.018){let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.10,W*.90),R(H*.15,H*.85),R(S*.07,S*.25),R(-1.15,1.15),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}
-if(!personalSealsDone&&elapsed>=totalDur*.42){drawPersonalFinalSeals();}
+if(!personalSealsDone&&remain<=1200){drawPersonalFinalSeals();}
 if(!crossDaggerDone && remain<=500){
   crossDaggerDone=true;
   (void 0);
@@ -952,11 +958,19 @@ if(now>=nextThoughtShift){
  nextThoughtShift=now+(Math.random()<.30?R(4200,8500)*EXECUTION_SLOW:R(1400,4800)*EXECUTION_SLOW);
 }
 if(now>=nextTempoShift){let rp=Math.random();if(rp<.18)tempo=R(1.7,2.8);else if(rp<.48)tempo=R(3.0,4.8);else if(rp<.80)tempo=R(5.0,7.4);else tempo=R(7.8,11.5);nextTempoShift=now+R(1800,8500)*EXECUTION_SLOW}
-paintStrokeFrame(16.7);if(now<started+(finishAt-started)*.90&&now>=nextAction&&strokeQueue.length<180){let burst=Math.random()<.82?(R(5,12)|0):R(2,5)|0;while(burst--&&strokeQueue.length<180){gesture();actionsDone++;strokesSinceLiquify++;if(strokesSinceLiquify>=nextLiquifyAt && actionsDone>16 && strokeQueue.length<100){if(Math.random()<.66)sculptMassLiquify();else liquify(R(.012,.032));strokesSinceLiquify=0;nextLiquifyAt=R(2,4)|0}}nextAction=now+((R(4,24)/clamp(tempo,1.2,7.5))/thinkingPace)*EXECUTION_SLOW}if(now<started+(finishAt-started)*.90&&actionsDone>minActions*.55&&Math.random()<.018&&profile.connectors>0){connector();profile.connectors--;actionsDone++}if(now<started+(finishAt-started)*.90&&actionsDone>minActions*.35&&Math.random()<.007&&profile.planes>0){if(Math.random()<.85){(void 0);}profile.planes--;actionsDone++;if(Math.random()<.82)sculptMassLiquify()}if(compositionMature(now))finishWork(now);requestAnimationFrame(tick)}
+paintStrokeFrame(16.7);if(now<started+(finishAt-started)*.90&&now>=nextAction&&strokeQueue.length<180){let burst=Math.random()<.82?(R(5,12)|0):R(2,5)|0;while(burst--&&strokeQueue.length<180){gesture();actionsDone++;strokesSinceLiquify++;if(strokesSinceLiquify>=nextLiquifyAt && actionsDone>16 && strokeQueue.length<100){if(Math.random()<.66)sculptMassLiquify();else liquify(R(.012,.032));strokesSinceLiquify=0;nextLiquifyAt=R(2,4)|0}}nextAction=now+((R(4,24)/clamp(tempo,1.2,10.5))/thinkingPace)*EXECUTION_SLOW}if(now<started+(finishAt-started)*.90&&actionsDone>minActions*.55&&Math.random()<.018&&profile.connectors>0){connector();profile.connectors--;actionsDone++}if(now<started+(finishAt-started)*.90&&actionsDone>minActions*.35&&Math.random()<.007&&profile.planes>0){if(Math.random()<.85){(void 0);}profile.planes--;actionsDone++;if(Math.random()<.82)sculptMassLiquify()}if(compositionMature(now))finishWork(now);requestAnimationFrame(tick)}
 async function infinitoFullScreen(){
  if(document.fullscreenElement)return;
  try{await document.documentElement.requestFullscreen()}catch(e){}
 }
 window.addEventListener('pointerdown',async()=>{if(!saveDir)await chooseSaveFolder();await infinitoFullScreen()},{once:true});
-document.getElementById('p').onclick=e=>{paused=!paused;e.target.textContent=paused?'CONTINUAR':'PAUSA'};document.getElementById('save').onclick=downloadShot;document.getElementById('next').onclick=()=>beginWork();onresize=resize;resize();beginWork();requestAnimationFrame(tick);
+document.getElementById('p').onclick=e=>{paused=!paused;e.target.textContent=paused?'CONTINUAR':'PAUSA'};document.getElementById('save').onclick=downloadShot;document.getElementById('next').onclick=()=>beginWork();onresize=resize;
+(function fastFirstPaint(){
+ let vw=innerWidth,vh=innerHeight;W=vw;H=vh;
+ c.style.width='100vw';c.style.height='100vh';c.style.position='fixed';c.style.left='0';c.style.top='0';c.style.transform='none';c.style.inset='0';
+ c.width=Math.round(W*D);c.height=Math.round(H*D);
+ g.setTransform(D,0,0,D,0,0);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ g.fillStyle='#fff';g.fillRect(0,0,W,H);
+ requestAnimationFrame(()=>{beginWork();requestAnimationFrame(tick);});
+})();
 </script></body></html>
