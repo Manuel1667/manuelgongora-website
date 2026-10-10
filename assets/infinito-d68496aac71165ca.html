@@ -921,7 +921,7 @@ function compositionMature(now){
  // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
  return now>=finishAt && strokeQueue.length===0;
 }
-function finishWork(now){/* Sin Liquify global al cierre. Si el evento de firma no alcanzó a ejecutarse por tiempo, se resuelve aquí respetando exactamente el 80%. */if(phase!=='paint')return;drawPersonalFinalSeals();exactSealDone=true;if(!crossDaggerDone){crossDaggerDone=true;(void 0);}phase='hold';phaseAt=now}
+function finishWork(now){/* Sin Liquify global al cierre. Si el evento de firma no alcanzó a ejecutarse por tiempo, se resuelve aquí respetando exactamente el 80%. */if(phase!=='paint')return;drawPersonalFinalSeals();exactSealDone=true;if(!crossDaggerDone){crossDaggerDone=true;(void 0);}phase='hold';phaseAt=performance.now();phaseAt=now}
 function tick(now){if(finalLiquifyPhase&&animateFinalLiquify(performance.now()))return;
  if(paused){requestAnimationFrame(tick);return}
 if(phase==='hold'){if(now-phaseAt>=2000)beginWork();requestAnimationFrame(tick);return}let remain=finishAt-now;remainNow=remain;
