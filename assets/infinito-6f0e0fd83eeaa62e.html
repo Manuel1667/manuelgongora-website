@@ -762,18 +762,21 @@ function gongoraReferenceSeal(kind){
 
 function drawPersonalFinalSeals(){
  if(personalSealsDone)return;personalSealsDone=true;
- // FIRMA FINAL DE GÓNGORA: siempre 1 o 2 sellos, elegidos de su catálogo,
- // exactamente en el último segundo de la obra.
+ // FIRMA FINAL: SIEMPRE uno o dos sellos inequívocos de Góngora.
+ // Sale en el último segundo y no depende del antiguo 70%.
  let count=Math.random()<.50?1:2;
- let catalog=['fence','sperm','dagger','cross','ref1','ref2','ref3','ref4','ref5','ref6','ref7'];
- for(let i=catalog.length-1;i>0;i--){let j=(Math.random()*(i+1))|0,t=catalog[i];catalog[i]=catalog[j];catalog[j]=t}
- let chosen=catalog.slice(0,count);
+ let core=['fence','sperm','dagger'];
+ for(let i=core.length-1;i>0;i--){let j=(Math.random()*(i+1))|0,t=core[i];core[i]=core[j];core[j]=t}
+ let chosen=core.slice(0,count);
  for(let kind of chosen){
-   if(kind==='cross'){crossThisWork=true;gongoraCrossSeal();}
-   else if(kind==='sperm'){spermTargetThisWork=Math.max(spermTargetThisWork,spermCount+1);gongoraSpermatozoid();}
-   else if(kind==='fence'){gongoraDoubleBarbedSeal();}
-   else if(kind==='dagger'){gongoraCreativeCrossDagger();}
-   else gongoraReferenceSeal(kind);
+   if(kind==='sperm'){
+     spermTargetThisWork=Math.max(spermTargetThisWork,spermCount+1);
+     gongoraSpermatozoid();
+   }else if(kind==='fence'){
+     gongoraDoubleBarbedSeal();
+   }else if(kind==='dagger'){
+     gongoraCreativeCrossDagger();
+   }
  }
 }
 
@@ -975,7 +978,7 @@ async function saveCurrentFrameHQ(){
  try{let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}catch(e){}
 }
 async function downloadShot(){await downloadShotHQ()}
-function beginWork(){lateWetFormDone=false;longHairChanceThisWork=R(.03,.05);wetShareThisWork=R(.10,.60);humanoidWork=Math.random()<.33;personalSealWork=Math.random()<.70;personalSealsDone=false;personalSealCount=0;sealSurpriseLarge=Math.random()<.03;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealCount=0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];tempo=9.982;thinkingPace=.72;liquifyRhythm='fast';nextThoughtShift=Infinity;nextTempoShift=Infinity;nextAction=started;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(1.4,2.8)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(48000,66000);let dur=finishAt-started;
+function beginWork(){lateWetFormDone=false;longHairChanceThisWork=R(.03,.05);wetShareThisWork=R(.10,.60);humanoidWork=Math.random()<.33;personalSealWork=Math.random()<.70;personalSealsDone=false;personalSealCount=0;sealSurpriseLarge=Math.random()<.03;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealCount=0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];tempo=9.982;thinkingPace=.72;liquifyRhythm='fast';nextThoughtShift=Infinity;nextTempoShift=Infinity;nextAction=started;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(1.4,2.8)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(62400,85800);let dur=finishAt-started;
 artistPauseTarget=0;pauseMarks=[];queueInitialBase();if(humanoidWork&&Math.random()<.86){openingBlackHumanoids();}else if(!humanoidWork){let organicN=R(3,7)|0;for(let oi=0;oi<organicN;oi++)(Math.random()<.48?organicBrainForm:organicNeuralForm)();}if(dominantLargeWork)if(allowHugeCentralMass)dominantBlackForm();else paintedMass();else if(monolithicPlaneWork)if(allowHugeCentralMass)monolithicBlackPlane();else paintedMass();}
 function compositionMature(now){
  // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
