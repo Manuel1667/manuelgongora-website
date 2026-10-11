@@ -1483,6 +1483,22 @@ header{background:#fff!important;}
   #infinito #art2,#infinito #art3{display:none!important;}
 }
 </style>
+
+<style id="home-biography-contact-restore-11oct">
+/* Requested only: Biography title + button below all Home series, on every device. */
+.home-biography-link .home-biography-button{
+  width:100%;min-height:92px;padding:24px 28px;border:2px solid rgba(128,128,128,.5);
+  background:#fff;color:#111;text-align:left;cursor:pointer;
+  font:400 clamp(24px,3vw,42px)/1.05 Georgia,serif;
+}
+@media (hover:hover) and (pointer:fine){
+  .home-biography-link .home-biography-button:hover{background:#111;color:#fff;}
+}
+@media(max-width:760px){
+  .home-biography-link .home-biography-button{min-height:72px;padding:18px;font-size:24px;}
+  #contacto{display:block!important;visibility:visible!important;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1526,6 +1542,10 @@ Construído a partir de seus próprios parâmetros pictóricos — linha, gesto,
 <div class="card series-link"><button class="series-card-button" data-series-page="page-linea" type="button"><span>06 · <span data-en="SERIES" data-es="SERIE" data-fr="SÉRIE" data-it="SERIE" data-pt="SÉRIE">SERIES</span></span><strong data-en="Expression of the Line" data-es="Expresión de la Línea" data-fr="Expression de la Ligne" data-it="Espressione della Linea" data-pt="Expressão da Linha">Expression of the Line</strong></button></div>
 <div class="card series-link"><button class="series-card-button" data-series-page="page-mixed" type="button"><span>07 · <span data-en="MIXED" data-es="MIXTAS" data-fr="MIXTES" data-it="MISTI" data-pt="MISTAS">MIXED</span></span><strong data-en="Mix Paintings" data-es="Pinturas Mixtas" data-fr="Peintures Mixtes" data-it="Dipinti Misti" data-pt="Pinturas Mistas">Mix Paintings</strong></button></div>
 </div></section>
+<section class="content home-biography-link" id="home-biography-link">
+<h2 data-en="Biography" data-es="Biografía" data-fr="Biographie" data-it="Biografia" data-pt="Biografia">Biography</h2>
+<button class="home-biography-button" data-series-page="biography-page" type="button"><span data-en="Biography" data-es="Biografía" data-fr="Biographie" data-it="Biografia" data-pt="Biografia">Biography</span></button>
+</section>
 <section class="content" id="contacto">
 <h2 data-en="Contact" data-es="Contacto" data-fr="Contact" data-it="Contatti" data-pt="Contato">Contact</h2>
 <div class="bio contact-info">
