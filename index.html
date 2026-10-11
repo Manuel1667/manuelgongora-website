@@ -1499,6 +1499,29 @@ header{background:#fff!important;}
   #contacto{display:block!important;visibility:visible!important;}
 }
 </style>
+
+<style id="home-biography-button-photo-all-devices-11oct">
+/* Requested only: Biography button matches the series-button photo layout on every device. */
+.home-biography-link .home-biography-button{
+  padding:0!important;overflow:hidden!important;display:grid!important;
+  grid-template-columns:minmax(300px,1fr) minmax(300px,42%)!important;
+  align-items:stretch!important;min-height:190px!important;
+}
+.home-biography-link .home-biography-copy{
+  display:flex!important;flex-direction:column!important;justify-content:center!important;
+  align-items:flex-start!important;gap:12px!important;padding:28px!important;min-width:0!important;
+}
+.home-biography-link .home-biography-kicker{font:400 10px/1 Arial,Helvetica,sans-serif!important;letter-spacing:.18em!important;}
+.home-biography-link .home-biography-copy strong{font:400 clamp(24px,3vw,42px)/1.05 Georgia,serif!important;}
+.home-biography-link .home-biography-image{display:block!important;min-height:190px!important;height:190px!important;overflow:hidden!important;background:#f4f4f4!important;}
+.home-biography-link .home-biography-image img{display:block!important;width:100%!important;height:190px!important;object-fit:cover!important;}
+@media(max-width:760px){
+  .home-biography-link .home-biography-button{display:grid!important;grid-template-columns:1fr 42%!important;min-height:120px!important;padding:0!important;}
+  .home-biography-link .home-biography-copy{gap:10px!important;padding:18px!important;}
+  .home-biography-link .home-biography-copy strong{font-size:24px!important;}
+  .home-biography-link .home-biography-image,.home-biography-link .home-biography-image img{min-height:120px!important;height:120px!important;max-height:120px!important;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1544,7 +1567,7 @@ Construído a partir de seus próprios parâmetros pictóricos — linha, gesto,
 </div></section>
 <section class="content home-biography-link" id="home-biography-link">
 <h2 data-en="Biography" data-es="Biografía" data-fr="Biographie" data-it="Biografia" data-pt="Biografia">Biography</h2>
-<button class="home-biography-button" data-series-page="biography-page" type="button"><span data-en="The Artist" data-es="El Artista" data-fr="L’Artiste" data-it="L’Artista" data-pt="O Artista">The Artist</span></button>
+<button class="home-biography-button" data-series-page="biography-page" type="button"><span class="home-biography-copy"><span class="home-biography-kicker" data-en="BIOGRAPHY" data-es="BIOGRAFÍA" data-fr="BIOGRAPHIE" data-it="BIOGRAFIA" data-pt="BIOGRAFIA">BIOGRAPHY</span><strong data-en="The Artist" data-es="El Artista" data-fr="L’Artiste" data-it="L’Artista" data-pt="O Artista">The Artist</strong></span><span class="home-biography-image"><img alt="Manuel Góngora" src="assets/artwork-e761d8ad1184b6ec.jpg"/></span></button>
 </section>
 <section class="content" id="contacto">
 <h2 data-en="Contact" data-es="Contacto" data-fr="Contact" data-it="Contatti" data-pt="Contato">Contact</h2>
