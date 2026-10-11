@@ -1440,6 +1440,42 @@ header{background:#fff!important;}
 }
 </style>
 
+
+<style id="infinito-vertical-triptych-only-11oct">
+/* Requested only: Windows Home = three vertical phone-format INFINITO works in the existing space. */
+@media (min-width:761px){
+  #infinito .screen{
+    aspect-ratio:2.35/1!important;
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:clamp(18px,3.1vw,60px)!important;
+    background:#fff!important;
+    align-items:stretch!important;
+  }
+  #infinito .screen iframe{
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    background:#fff!important;
+  }
+  /* Inside Artificial Intelligence, INFINITO opens vertically like the phone version. */
+  #art-lightbox .lightbox-live{
+    height:min(78vh,900px)!important;
+    width:min(57.33vh,662px)!important;
+    max-width:88vw!important;
+    aspect-ratio:.735/1!important;
+    margin:0 auto!important;
+  }
+  .ai-live-item .ai-live-thumb{
+    aspect-ratio:.735/1!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+}
+@media (max-width:760px){
+  #infinito #art2,#infinito #art3{display:none!important;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1465,7 +1501,7 @@ header{background:#fff!important;}
 <main>
 <section class="hero" id="infinito">
 <div class="kicker" data-en="Living artwork · Artificial Intelligence" data-es="Obra viva · Artificial Intelligence" data-fr="Œuvre vivante · Intelligence artificielle" data-it="Opera vivente · Intelligenza Artificiale" data-pt="Obra viva · Inteligência Artificial">Living artwork · Artificial Intelligence</div>
-<div class="box"><div class="screen"><iframe id="art" title="Artificial Intelligence — Infinito"></iframe></div></div>
+<div class="box"><div class="screen"><iframe id="art" title="Artificial Intelligence — Infinito I"></iframe><iframe id="art2" title="Artificial Intelligence — Infinito II"></iframe><iframe id="art3" title="Artificial Intelligence — Infinito III"></iframe></div></div>
 <div class="caption"><h1>Artificial Intelligence Infinito: <em>Devoured by the Signal</em></h1></div>
 </section>
 <section class="content bio-under-work" id="bio"><div class="bio bio-inline"><strong class="bio-name">Manuel Góngora</strong> <span data-en="Cuban-American artist and pioneer in digital painting since 1989, Manuel Góngora presents Infinito, the culminating work of his Artificial Intelligence series.
@@ -2376,13 +2412,20 @@ if(history.state && history.state.gongoraRoute){
 const WIN_ART='assets/infinito-6f0e0fd83eeaa62e.html';
 const PHONE_ART='assets/infinito-d68496aac71165ca.html';
 const art=document.getElementById('art');
+const art2=document.getElementById('art2');
+const art3=document.getElementById('art3');
 const aiInfinitoThumb=document.getElementById('ai-infinito-thumb');
 if(aiInfinitoThumb) aiInfinitoThumb.src=PHONE_ART;
 let currentArt='';
 function setResponsiveArt(){
   const phone=window.matchMedia('(max-width: 760px) and (orientation: portrait)').matches;
-  const next=phone?PHONE_ART:WIN_ART;
-  if(next!==currentArt){currentArt=next;art.src=next;}
+  const next=PHONE_ART;
+  if(next!==currentArt){
+    currentArt=next;
+    art.src=next;
+    if(art2) art2.src=next;
+    if(art3) art3.src=next;
+  }
 }
 setResponsiveArt();
 window.addEventListener('resize',setResponsiveArt);
