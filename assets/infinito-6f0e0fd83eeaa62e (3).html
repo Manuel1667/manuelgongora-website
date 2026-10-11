@@ -1,0 +1,1279 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>INFINITO — Museo — Materia Pictórica Fundida — Manuel Góngora</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}canvas{display:block;position:fixed;background:#fff;touch-action:none}#ui{display:none!important}#ui:hover{opacity:.92}button{background:#111;color:#eee;border:1px solid #777;border-radius:6px;padding:7px 10px;font:11px Arial}</style></head><body><canvas id="c"></canvas><div id="ui"><button id="p">PAUSA</button><button id="save">GUARDAR</button><button id="next">TERMINAR / SIGUIENTE</button></div><script>
+const EXECUTION_SLOW=1.65;
+// AJUSTE BASE CONSERVADA: símbolos orgánicos como versión anterior; +25% adicional de filamentos sobre esta base.
+// Filamentos ondulados, degradé gris/negro y predominio oscuro; flor/lotus sigue desactivada.
+let daggerCountThisWork=1;
+let crossThisWork=false;
+let remainNow=999999;
+let spermThisWork=false;
+let whiteFormTarget=5,whiteFormCount=0,finalWhiteFormDone=false,finalWhiteFormsTarget=1;
+let exactTridentWork=false,exactTridentTarget=0,exactTridentCount=0;
+let finalBlackBrushChance=.02;
+let liquifyRhythm='medium'; // slow, medium, fast, veryFast: cambia el pulso, nunca la distorsión máxima
+let guaranteedDaggerDrawn=false;
+let safeWorkStartedAt=0;
+let suppressHumanoidsThisWork=false,giantHumanoidThisWork=false,giantHumanoidDrawn=false,neuralCircuitWork=false;
+let mysticCultureShareThisWork=.35,mysticSymbolGuaranteedDone=false;
+
+const c=document.getElementById('c'),g=c.getContext('2d',{alpha:false});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+const R=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),pick=a=>a[(Math.random()*a.length)|0];
+function hairGray(){let blackness=Math.random()<.60?R(.72,.98):R(.28,.70);return Math.round(255*(1-blackness));}
+function hairWidthVariation(w){return w*(Math.random()<R(.18,.30)?R(1.90,2.10):1);}
+let landscapeWork=false,landscapeDone=false,dominantLargeWork=false,thinkingPace=1,nextThoughtShift=0,artistPauseUntil=0,artistPauseCount=0,artistPauseTarget=2,pauseMarks=[],topSealKinds=[];let W,H,D=Math.min(devicePixelRatio||1,2),paused=false,phase='paint',phaseAt=0,started=0,nextAction=0,bg='white',zones=[],workNo=0,actionsDone=0,profile=null,strokeQueue=[],nextTempoShift=0,tempo=1,maturity=0,minActions=0,maxActions=0,baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=14,massAreas=[],finishAt=0,monolithicPlaneWork=false,clawWork=false;
+function resize(){let vw=innerWidth,vh=innerHeight;W=vw;H=vh;c.style.width='100vw';c.style.height='100vh';c.style.position='fixed';c.style.left='0';c.style.top='0';c.style.transform='none';c.style.inset='0';c.width=Math.round(W*D);c.height=Math.round(H*D);g.setTransform(D,0,0,D,0,0);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';beginWork()}
+function chooseBg(){bg='white'}
+function lightShare(){try{let sw=48,sh=36,t=document.createElement('canvas');t.width=sw;t.height=sh;let x=t.getContext('2d');x.drawImage(c,0,0,sw,sh);let d=x.getImageData(0,0,sw,sh).data,n=sw*sh,light=0;for(let i=0;i<d.length;i+=4){let lum=(d[i]+d[i+1]+d[i+2])/3;if(lum>=225)light++}return light/n}catch(e){return 1}}
+function preserveWhite(){return lightShare()<=.34}
+function fillBg(){let v=bg==='black'?R(0,10):bg==='gray'?R(225,241):R(252,255);g.fillStyle=`rgb(${v|0},${v|0},${v|0})`;g.fillRect(0,0,W,H)}
+function ink(alpha=.7,bias=.68){let v=bg==='black'?R(125,245):(Math.random()<bias?R(0,58):R(75,205));return `rgba(${v|0},${v|0},${v|0},${R(alpha*.62,alpha)})`}
+function buildZones(){zones=[];let n=profile.zones;let anchors=[[.16,.18],[.50,.16],[.84,.20],[.18,.50],[.52,.50],[.84,.52],[.18,.82],[.50,.82],[.84,.80]].sort(()=>Math.random()-.5);for(let i=0;i<n;i++){let a=anchors[i%anchors.length];zones.push({x:clamp(a[0]+R(-.09,.09),.06,.94),y:clamp(a[1]+R(-.09,.09),.06,.94),rx:R(.08,.23),ry:R(.08,.25),dir:R(.72,2.42)});} }
+function pt(z,k=1){return [W*clamp(z.x+R(-z.rx,z.rx)*k,.01,.99),H*clamp(z.y+R(-z.ry,z.ry)*k,.01,.99)]}
+
+// Cada obra recibe una estructura distinta: abierta, densa, planar, mecánica o humano-orgánica.
+function chooseProfile(){let kind=pick(['open','dense','planes','mechanical','human','hybrid','monumental']);let P={kind,zones:R(2,6)|0,planes:0,mechanical:0,human:0,density:R(.72,1.4),connectors:R(1,4)|0};if(kind==='open'){P.zones=R(2,4)|0;P.density=R(.55,.85)}if(kind==='dense'){P.zones=R(4,7)|0;P.density=R(1.2,1.65)}if(kind==='planes'){P.planes=R(2,5)|0}if(kind==='mechanical'){P.mechanical=R(3,7)|0;P.planes=R(1,3)|0}if(kind==='human'){P.human=R(6,10)|0}if(kind==='hybrid'){P.mechanical=R(2,5)|0;P.human=R(2,5)|0;P.planes=R(1,3)|0}if(kind==='monumental'){P.planes=R(2,4)|0;P.human=R(1,4)|0;P.mechanical=R(1,4)|0;P.density=R(.8,1.25)}return P}
+// Base pictórica: 1–3 gestos negros muy anchos (aprox. 10% del canvas), pintados progresivamente, no colocados de golpe.
+function fatBlackGesture(){let S=Math.min(W,H),edge=R(S*.075,S*.13),side=Math.random()<.55, x=side?R(-W*.05,W*.22):R(W*.08,W*.78),y=R(H*.05,H*.88),L=R(W*.38,W*.95),a=R(-.32,.32)+(Math.random()<.22?R(1.15,1.9):0),steps=R(55,115)|0,pts=[[x,y]],px=x,py=y;for(let i=1;i<=steps;i++){let t=i/steps,st=L/steps*R(.75,1.22);a+=R(-.045,.045)+Math.sin(t*Math.PI*R(1,2.5))*R(-.012,.012);px+=Math.cos(a)*st;py+=Math.sin(a)*st;pts.push([px,py])}queueStroke(pts,edge,`rgba(${R(0,18)|0},${R(0,18)|0},${R(0,18)|0},1)`,R(.8,1.8));}
+function queueInitialBase(){if(Math.random()<.34)paintedMass();hairCloud();baseQueued=true;}
+function broadPlane(){if(!preserveWhite())paintedMass()}
+// La masa negra NO aparece como rectángulo: se construye con una brocha muy gruesa, como pintura fresca.
+function paintedMass(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;
+ let S=Math.min(W,H),cx=R(W*.10,W*.72),cy=R(H*.03,H*.42),passes=R(4,8)|0;
+ let span=R(H*.34,H*.82),blackScale=pick([1,1,1,1.35,1.7,2,2.4,3]),bw=Math.min(S*.24,R(S*.045,S*.11)*blackScale),base=R(.72,2.18),pack=[];
+ let minx=W,maxx=0,miny=H,maxy=0;
+ for(let k=0;k<passes;k++){
+  let pts=[],steps=R(44,84)|0,x=cx+R(-bw*.32,bw*.32),y=cy+R(-bw*.22,bw*.22),a=base+R(-.055,.055);
+  pts.push([x,y]);
+  let formTurn=(Math.random()<.72?(Math.random()<.5?-1:1)*R(.010,.026):0),formPulse=R(1.0,2.4);
+  for(let i=1;i<=steps;i++){let t=i/steps,st=span/steps*R(.84,1.16);a+=formTurn*Math.sin(t*Math.PI)+Math.sin(t*Math.PI*formPulse+k*.12)*R(-.016,.016)+R(-.010,.010);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+  pack.push([pts,bw*R(.82,1.18),`rgba(${R(0,9)|0},${R(0,9)|0},${R(0,9)|0},1)`,R(5.5,9.0)])
+ }
+ let area={x:clamp(minx-bw,0,W),y:clamp(miny-bw,0,H),w:clamp(maxx-minx+bw*2,100,W),h:clamp(maxy-miny+bw*2,100,H)};massAreas.push(area);if(massAreas.length>8)massAreas.shift();
+ for(let k=0;k<pack.length;k++){let q=pack[k];queueStroke(q[0],q[1],q[2],q[3],true,k===pack.length-1?()=>{liquifyRegion(area.x,area.y,area.w,area.h,R(.40,.70));whiteThroughBlack(area);blackClawTips(area);}:null)}
+}
+
+// En ~22.5% de las obras: un solo plano negro continuo ocupa aproximadamente 20–40% del lienzo.
+function organicTaperedExtension(ax,ay,ang,L,w0,color,liqMin=.08,liqMax=.18){
+ // La punta nace DENTRO de la masa y se estira como la misma pintura: nunca se dibuja un triángulo aparte.
+ let S=Math.min(W,H),steps=R(15,27)|0,pts=[[ax,ay]],x=ax,y=ay,a=ang,phase=R(0,Math.PI*2);
+ for(let i=1;i<=steps;i++){
+   let t=i/steps,st=L/steps*R(.86,1.14);
+   a+=Math.sin(t*Math.PI*R(1.1,2.3)+phase)*R(-.020,.020)+R(-.020,.020)*(1-t);
+   x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);
+ }
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.strokeStyle=color;g.lineCap='round';g.lineJoin='round';
+ for(let i=1;i<pts.length;i++){
+   let t=i/(pts.length-1),organic=.88+.12*Math.sin(t*Math.PI*R(1.5,3.2)+phase);
+   let w=Math.max(.35,w0*Math.pow(1-t,1.28)*organic);
+   g.lineWidth=w;g.beginPath();g.moveTo(pts[i-1][0],pts[i-1][1]);g.lineTo(pts[i][0],pts[i][1]);g.stroke();
+ }
+ g.restore();
+ let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pad=Math.max(S*.012,w0*.60),x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H),rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,24,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,24,H-y0);
+ liquifyRegion(x0,y0,rw,rh,R(liqMin,liqMax));
+ return pts;
+}
+function blackClawTips(m){
+ if(!m)return;
+ // Las prolongaciones puntiagudas salen de la propia masa negra, no son triángulos ni piezas superpuestas.
+ let S=Math.min(W,H),n=R(3,8)|0,cx=m.x+m.w*.5,cy=m.y+m.h*.5;
+ for(let i=0;i<n;i++){
+   let side=R(0,4)|0,x,y,ang;
+   if(side===0){x=R(m.x+m.w*.12,m.x+m.w*.88);y=m.y+R(m.h*.04,m.h*.18);ang=R(-2.05,-1.10)}
+   else if(side===1){x=m.x+m.w-R(m.w*.04,m.w*.18);y=R(m.y+m.h*.12,m.y+m.h*.88);ang=R(-.72,.72)}
+   else if(side===2){x=R(m.x+m.w*.12,m.x+m.w*.88);y=m.y+m.h-R(m.h*.04,m.h*.18);ang=R(1.10,2.05)}
+   else{x=m.x+R(m.w*.04,m.w*.18);y=R(m.y+m.h*.12,m.y+m.h*.88);ang=R(2.42,3.86)}
+   // El arranque queda metido en la masa para que la punta sea una extensión continua de ella.
+   x+=(cx-x)*R(.05,.16);y+=(cy-y)*R(.05,.16);
+   organicTaperedExtension(x,y,ang,R(S*.13,S*.34),R(S*.030,S*.080),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,.12,.25);
+ }
+}
+
+function dominantBlackForm(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;
+ let target=R(.50,.70),area=W*H*target,aspect=R(.78,1.35);
+ let pw=Math.min(W*.96,Math.sqrt(area*aspect)),ph=Math.min(H*.96,area/Math.max(1,pw));
+ if(pw*ph<area*.90){pw=Math.min(W*.98,area/Math.max(1,ph))}
+ let cx=R(pw*.48,W-pw*.48),cy=R(ph*.48,H-ph*.48),rot=R(-.22,.22),n=R(18,28)|0,pts=[];
+ for(let i=0;i<n;i++){
+   let a=Math.PI*2*i/n,rr=R(.86,1.13);
+   if(Math.random()<.18)rr*=R(.72,.90);
+   let x=Math.cos(a)*pw*.50*rr,y=Math.sin(a)*ph*.50*rr;
+   pts.push([cx+Math.cos(rot)*x-Math.sin(rot)*y,cy+Math.sin(rot)*x+Math.cos(rot)*y]);
+ }
+ g.save();g.fillStyle=`rgba(${R(0,7)|0},${R(0,7)|0},${R(0,7)|0},1)`;
+ g.beginPath();g.moveTo(pts[0][0],pts[0][1]);
+ for(let i=0;i<n;i++){let p=pts[i],q=pts[(i+1)%n],mx=(p[0]+q[0])*.5,my=(p[1]+q[1])*.5;g.quadraticCurveTo(p[0],p[1],mx,my)}
+ g.closePath();g.fill();g.restore();
+ let m={x:clamp(cx-pw*.56,0,W),y:clamp(cy-ph*.56,0,H),w:clamp(pw*1.12,100,W),h:clamp(ph*1.12,100,H)};
+ massAreas.push(m);liquifyRegion(m.x,m.y,m.w,m.h,R(.025,.070));blackClawTips(m);
+ // Pelo conceptual sobre la gran masa: manos/caras/ojos/cruces/clavos/espinas.
+ let q=R(2,5)|0;while(q--)(void 0);
+}
+function monolithicBlackPlane(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;
+ let S=Math.min(W,H),target=R(.20,.40),area=W*H*target,aspect=R(.55,1.75),pw=Math.min(W*.82,Math.sqrt(area*aspect)),ph=Math.min(H*.82,area/Math.max(1,pw));
+ if(pw*ph<area*.72){ph=Math.min(H*.82,area/Math.max(1,pw))}
+ let cx=R(pw*.52,W-pw*.52),cy=R(ph*.52,H-ph*.52),rot=R(-.55,.55),n=12,pts=[];
+ for(let i=0;i<n;i++){let a=Math.PI*2*i/n,rr=R(.84,1.12),x=Math.cos(a)*pw*.50*rr,y=Math.sin(a)*ph*.50*rr;let X=cx+Math.cos(rot)*x-Math.sin(rot)*y,Y=cy+Math.sin(rot)*x+Math.cos(rot)*y;pts.push([X,Y])}
+ g.save();g.fillStyle=`rgba(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0},1)`;g.beginPath();g.moveTo(pts[0][0],pts[0][1]);
+ for(let i=0;i<n;i++){let p=pts[i],q=pts[(i+1)%n],mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2;g.quadraticCurveTo(p[0],p[1],mx,my)}g.closePath();g.fill();g.restore();
+ let m={x:clamp(cx-pw*.62,0,W),y:clamp(cy-ph*.62,0,H),w:clamp(pw*1.24,90,W),h:clamp(ph*1.24,90,H)};massAreas.push(m);liquifyRegion(m.x,m.y,m.w,m.h,R(.05,.15));if(Math.random()<.55)whiteThroughBlack(m);blackClawTips(m);
+}
+// Formas negras sugeridas: humanas, manos o mecánicas; abstractas, nunca literales ni siempre tipo raíz.
+function suggestiveBlackForm(){
+ // Masa negra viva: jamás icono, silueta prefabricada, óvalo ni plano gráfico.
+ if(preserveWhite())return;
+ let z=pick(zones),[cx,cy]=pt(z,.62),S=Math.min(W,H),sc=R(S*.08,S*.22),rot=R(-Math.PI,Math.PI);
+ let strands=R(4,9)|0,all=[];
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.lineCap='round';g.lineJoin='round';
+ for(let k=0;k<strands;k++){
+   let a=rot+R(-1.15,1.15),x=cx+R(-sc*.18,sc*.18),y=cy+R(-sc*.18,sc*.18),L=R(sc*.70,sc*1.65),steps=R(16,32)|0,pts=[[x,y]],phase=R(0,Math.PI*2);
+   for(let i=1;i<=steps;i++){let t=i/steps,st=L/steps*R(.75,1.25);a+=Math.sin(t*Math.PI*R(.7,2.1)+phase)*R(-.055,.055)+R(-.045,.045);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);all.push([x,y]);}
+   g.strokeStyle=`rgb(${R(0,9)|0},${R(0,9)|0},${R(0,9)|0})`;g.lineWidth=R(sc*.16,sc*.42)*(1-k/(strands*2.2));g.beginPath();g.moveTo(...pts[0]);for(let i=1;i<pts.length-1;i++){let p=pts[i],q=pts[i+1];g.quadraticCurveTo(p[0],p[1],(p[0]+q[0])*.5,(p[1]+q[1])*.5)}g.lineTo(...pts[pts.length-1]);g.stroke();
+ }
+ g.restore();
+ if(!all.length)return;
+ let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=sc*.34,m={x:clamp(Math.min(...xs)-pad,0,W),y:clamp(Math.min(...ys)-pad,0,H),w:0,h:0};m.w=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,60,W-m.x);m.h=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,60,H-m.y);massAreas.push(m);if(massAreas.length>8)massAreas.shift();
+ // La distorsión rompe cualquier lectura de vector/símbolo y funde la masa con la pintura.
+ liquifyRegion(m.x,m.y,m.w,m.h,R(.16,.32));
+ // Pelos nacen de la masa, no se añaden rayas decorativas.
+ let hn=R(13,29)|0;for(let h=0;h<hn;h++){let p=all[R(0,all.length)|0],a=R(-Math.PI,Math.PI),L=R(S*.018,S*.075),steps=R(12,25)|0,x=p[0],y=p[1];g.save();g.strokeStyle=`rgba(${R(35,95)|0},${R(35,95)|0},${R(35,95)|0},${R(.55,.90)})`;g.lineWidth=R(.25,1.15);g.lineCap='round';g.beginPath();g.moveTo(x,y);for(let j=1;j<=steps;j++){a+=R(-.06,.06);x+=Math.cos(a)*L/steps;y+=Math.sin(a)*L/steps;g.lineTo(x,y)}g.stroke();g.restore();}
+}
+function whiteMysticSpearTips(cx,cy,sc,rot,anchors){
+ // Las puntas blancas nacen de la MISMA forma blanca. No se añaden triángulos ni figuras independientes.
+ let n=Math.random()<.03?3:pick([1,2,4,5]),all=[];anchors=(anchors&&anchors.length)?anchors:[[cx,cy]];
+ for(let i=0;i<n;i++){
+   let p=anchors[R(0,anchors.length)|0],dx=p[0]-cx,dy=p[1]-cy;
+   let outward=Math.atan2(dy,dx);if(!isFinite(outward)||Math.hypot(dx,dy)<sc*.12)outward=rot+R(-Math.PI,Math.PI);
+   let ang=outward+R(-.42,.42);
+   // Empieza un poco hacia dentro para fundirse con el grosor blanco ya existente.
+   let ax=p[0]-Math.cos(ang)*sc*R(.05,.16),ay=p[1]-Math.sin(ang)*sc*R(.05,.16);
+   let pts=organicTaperedExtension(ax,ay,ang,R(sc*.45,sc*1.12),R(sc*.16,sc*.32),'rgb(255,255,255)',.07,.15);all.push(...pts);
+ }
+ return all;
+}
+
+function queueLivingHair(points,baseWidth=0.55,speed=5.2){
+ // INVARIANTE: todo pelo debe mostrar onda orgánica visible; nunca recta, rayo, zigzag ni trazo eléctrico.
+ // Pelo vivo: conserva exactamente la familia tonal negro-gris-blanco, pero nace fundido, nunca como cortado por tijera.
+ // 30-40% de los pelos se alargan aproximadamente al doble y son un poco más gruesos.
+ if(!points||points.length<4)return;
+ let longHair=Math.random()<R(.30,.40),workPts=points.map(p=>[p[0],p[1]]);
+ // 10-25% de los pelos son aproximadamente el doble de anchos, sin alterar sus tonos/degradados.
+ baseWidth=hairWidthVariation(baseWidth);
+ if(longHair&&workPts.length>3){
+   let n0=workPts.length,last=workPts[n0-1],prev=workPts[n0-2],dx=last[0]-prev[0],dy=last[1]-prev[1],seg=Math.hypot(dx,dy)||1;
+   let baseAng=Math.atan2(dy,dx),extra=n0-1,x=last[0],y=last[1],phase=R(0,Math.PI*2),waveAmp=R(.075,.165),waveFreq=R(.85,1.75);
+   // Ondulación abierta: la dirección oscila alrededor del eje original y nunca acumula giro hasta formar círculos/bucles.
+   for(let i=1;i<=extra;i++){let t=i/extra,a=baseAng+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp+R(-.018,.018);x+=Math.cos(a)*seg*R(.82,1.18);y+=Math.sin(a)*seg*R(.82,1.18);workPts.push([x,y]);}
+   baseWidth*=R(1.22,1.55);
+ }
+ let n=workPts.length,parts=R(4,7)|0,reverse=Math.random()<.50;
+ let startBlack=R(.88,.99),endBlack=R(.00,.08); // mismos tonos: puede llegar casi al blanco
+ if(reverse){let q=startBlack;startBlack=endBlack;endBlack=q;}
+ let widthPulse=R(.72,2.50);
+ for(let k=0;k<parts;k++){
+   let a=Math.max(0,Math.floor((k/parts)*(n-1))-1),b=Math.min(n-1,Math.ceil(((k+1)/parts)*(n-1))+1);
+   if(b-a<2)continue;
+   let t=(k+.5)/parts,blackness=startBlack+(endBlack-startBlack)*t;
+   blackness=clamp(blackness+R(-.07,.07),.02,.99);
+   let v=Math.round(255*(1-blackness)),alpha=R(.48,.78);
+   // La raíz entra suavemente: las primeras capas son más finas/translúcidas y se funden con la pintura.
+   let rootEase=k===0?R(.42,.68):1;
+   let localW=baseWidth*widthPulse*R(.72,1.18)*(1+Math.sin(t*Math.PI)*R(.05,.32))*rootEase;
+   let localAlpha=alpha*(k===0?R(.42,.68):1);
+   queueStroke(workPts.slice(a,b+1),Math.max(.10,localW),`rgba(${v},${v},${v},${localAlpha})`,speed*R(.86,1.16),false);
+   if(Math.random()<.72)queueStroke(workPts.slice(a,b+1),Math.max(.10,localW*R(1.35,1.85)),`rgba(${v},${v},${v},${R(.06,.14)*(k===0?.72:1)})`,speed*R(.90,1.12),false);
+ }
+}
+
+function organicHairOnBlackPoints(points,amount=18,spreadScale=1){
+ // Pelo localizado: rompe la silueta negra limpia y la convierte en materia pictorica organica.
+ if(!points||!points.length)return;
+ let S=Math.min(W,H),n=Math.max(7,Math.round(amount*2.35));
+ for(let h=0;h<n;h++){
+   let p=points[R(0,points.length)|0],a=R(-Math.PI,Math.PI),L=R(S*.025,S*.105)*spreadScale,steps=R(14,32)|0,x=p[0]+R(-S*.006,S*.006),y=p[1]+R(-S*.006,S*.006),pts=[[x,y]],phase=R(0,Math.PI*2),baseAng=a,waveAmp=R(.16,.32),waveFreq=R(1.05,2.35);
+   for(let j=1;j<=steps;j++){let t=j/steps,st=L/steps*R(.78,1.22);a=baseAng+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp+Math.sin(t*Math.PI+phase*.35)*R(.035,.085)+R(-.018,.018);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);}
+   let blackness=R(.30,.82),v=Math.round(255*(1-blackness));
+   queueLivingHair(pts,R(.18,1.05),R(4.0,7.4));
+   // Unión fundida: una raíz corta y suave acompaña el pelo para que no nazca cortado sobre el negro.
+   if(Math.random()<.72){let cut=Math.max(5,Math.round(pts.length*R(.24,.42)));queueLivingHair(pts.slice(0,cut),R(.26,1.18),R(4.6,8.0));}
+ }
+}
+
+
+// REGLA ABSOLUTA DE ESTILO: ninguna línea puede construir un zigzag/rayo eléctrico.
+// Convierte esqueletos simbólicos en curvas orgánicas continuas antes de pintarlos.
+function smoothOrganicSymbolPath(rawPts,closed=false){
+ if(!rawPts||rawPts.length<2)return rawPts||[];
+ let p=rawPts.slice(),out=[];
+ // Catmull-Rom suave: conserva la identidad sugerida sin esquinas quebradas tipo vector/rayo.
+ for(let i=0;i<p.length-1;i++){
+   let p0=p[Math.max(0,i-1)],p1=p[i],p2=p[i+1],p3=p[Math.min(p.length-1,i+2)],sub=12;
+   for(let k=0;k<sub;k++){
+     let t=k/sub,t2=t*t,t3=t2*t;
+     let x=.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3);
+     let y=.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3);
+     out.push([x,y]);
+   }
+ }
+ out.push(p[p.length-1]);
+ // Micro respiración lateral suave, nunca cambios bruscos de dirección.
+ let S=Math.min(W,H),phase=R(0,Math.PI*2),amp=R(S*.0005,S*.0022);
+ return out.map((q,i)=>{let a=out[Math.max(0,i-1)],b=out[Math.min(out.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,e=Math.sin(Math.PI*i/Math.max(1,out.length-1)),off=Math.sin(i/out.length*Math.PI*R(.6,1.4)+phase)*amp*e;return[q[0]+nx*off,q[1]+ny*off]});
+}
+
+// Brocha exclusiva para símbolos: curva continua, sin segmentos rectos ni quiebres tipo electricidad.
+// Se pinta como materia fundida con pasadas suaves; NUNCA usa lineTo para construir el símbolo.
+function organicSymbolBrush(points,w0,color){
+ // REGLA ABSOLUTA: el símbolo se pinta como UNA curva orgánica continua.
+ // Nunca dientes, bloques, serrucho, zigzag, rayos ni segmentos eléctricos.
+ if(!points||points.length<2)return points||[];
+ let pts=smoothOrganicSymbolPath(points,false),S=Math.min(W,H);
+ // Lenguaje de los sellos/símbolos: gesto orgánico inspirado en el pez de Manuel.
+ // La silueta reconocible se conserva, pero nunca queda como icono/vector perfecto:
+ // se arquea, respira, se afila y cambia de presión como una pincelada real.
+ if(pts.length>3){
+   let phase=R(0,Math.PI*2),waves=R(.72,1.38),amp=R(S*.0028,S*.0085);
+   pts=pts.map((p,i)=>{
+     let a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+     let t=i/Math.max(1,pts.length-1),edge=Math.sin(Math.PI*t),off=(Math.sin(t*Math.PI*2*waves+phase)*.72+Math.sin(t*Math.PI*R(3.2,5.2)+phase*.63)*.28)*amp*edge;
+     return [p[0]+nx*off,p[1]+ny*off];
+   });
+   pts=smoothOrganicSymbolPath(pts,false);
+ }
+ let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+ let horizontal=(maxx-minx)>=(maxy-miny),grad=g.createLinearGradient(horizontal?minx:(minx+maxx)/2,horizontal?(miny+maxy)/2:miny,horizontal?maxx:(minx+maxx)/2,horizontal?(miny+maxy)/2:maxy);
+ // Degradé pictórico continuo: negro -> grises -> casi blanco -> gris oscuro.
+ let flip=Math.random()<.5;
+ let stops=flip?[[0,5],[.24,42],[.50,118],[.73,225],[1,55]]:[[0,55],[.27,225],[.50,118],[.76,42],[1,5]];
+ for(let st of stops){let v=clamp(Math.round(st[1]+R(-12,12)),0,245);grad.addColorStop(st[0],`rgba(${v},${v},${v},${R(.82,.98)})`)}
+ function curveStroke(w,style,alpha){
+   g.save();g.globalCompositeOperation='source-over';g.globalAlpha=alpha;g.filter='none';g.strokeStyle=style;g.lineWidth=w;g.lineJoin='round';g.lineCap='round';g.beginPath();g.moveTo(pts[0][0],pts[0][1]);
+   for(let i=1;i<pts.length-1;i++){let mx=(pts[i][0]+pts[i+1][0])*.5,my=(pts[i][1]+pts[i+1][1])*.5;g.quadraticCurveTo(pts[i][0],pts[i][1],mx,my)}
+   let n=pts.length;g.quadraticCurveTo(pts[n-2][0],pts[n-2][1],pts[n-1][0],pts[n-1][1]);g.stroke();g.restore();
+ }
+ // Materia pictórica fundida: varias veladuras sobre la MISMA curva suave.
+ // No se desplazan en dientes ni bloques: nunca crean serrucho, rayo o zigzag eléctrico.
+ curveStroke(w0*R(1.45,2.12),'rgba(28,28,28,.055)',1);
+ curveStroke(w0*R(1.12,1.58),'rgba(105,105,105,.075)',1);
+ curveStroke(w0,grad,1);
+ // Una pasada interior translúcida rompe el aspecto de icono plano y mezcla negro/gris/casi blanco.
+ let innerV=Math.round(R(105,225));
+ curveStroke(Math.max(.18,w0*R(.24,.42)),`rgba(${innerV},${innerV},${innerV},${R(.10,.22)})`,1);
+ let pad=Math.max(S*.008,w0*.65),x0=clamp(minx-pad,0,W),y0=clamp(miny-pad,0,H),rw=clamp(maxx-minx+pad*2,20,W-x0),rh=clamp(maxy-miny+pad*2,20,H-y0);
+ liquifyRegion(x0,y0,rw,rh,R(.025,.060));
+ return pts;
+}
+
+// Cultura humana absorbida: símbolos místicos/religiosos sugeridos como materia pintada,
+// nunca iconos limpios, geométricos ni clip-art. Sustituyen parte de los humanoides.
+function organicMysticCultureSymbol(){
+ // REGLA: los símbolos solo pueden nacer durante la primera mitad de la obra.
+ // Durante beginWork, finishAt todavía puede pertenecer a la obra anterior; en ese instante se permite la composición inicial.
+ if(typeof started!=='undefined' && typeof finishAt!=='undefined' && finishAt>started){
+   let symbolElapsed=performance.now()-started, symbolDuration=finishAt-started;
+   if(symbolElapsed>=symbolDuration*.50)return false;
+ }
+ // Símbolo cultural como MASA PICTÓRICA: grueso, roto, asimétrico y parcialmente absorbido.
+ // Nunca contorno fino, icono, vector, logotipo ni línea de grosor constante.
+ let S=Math.min(W,H),cx=R(W*.12,W*.88),cy=R(H*.14,H*.86),sc=R(S*.095,S*.24),rot=R(-Math.PI,Math.PI);
+ let kind=pick(['ichthys','ankh','yinyang','crescent','neuralCircuit','neuralCircuit','neuralCircuit','neuralCircuit','neuralCircuit','mysticCross']);
+ const T=(x,y)=>[cx+(Math.cos(rot)*x-Math.sin(rot)*y)*sc,cy+(Math.sin(rot)*x+Math.cos(rot)*y)*sc];
+ let paths=[];
+ if(kind==='ichthys'){
+   // Pez gestual: inspirado en el trazo de referencia de Manuel, nunca un icono geométrico.
+   // Lomo y vientre desiguales, boca/cabeza afilada y cola rota/orgánica.
+   paths=[[[-1.08,.02],[-.82,-.24],[-.42,-.40],[.02,-.44],[.42,-.32],[.72,-.10],[1.00,.02],[.70,.18],[.28,.38],[-.18,.43],[-.62,.31],[-.92,.15],[-1.08,.02]],[[.68,-.11],[1.08,-.48],[.98,-.05],[1.16,.36],[.68,.17]]];
+ }else if(kind==='ankh'){
+   paths=[[[0,1.05],[.02,.30],[.02,-.18]],[[-.55,.24],[.55,.18]],[[-.02,-.16],[-.32,-.42],[-.30,-.80],[-.02,-1.04],[.29,-.80],[.31,-.42],[-.02,-.16]]];
+ }else if(kind==='yinyang'){
+   paths=[[[-.70,-.62],[-.20,-.84],[.35,-.58],[.48,-.18],[.14,.12],[-.22,.28],[-.42,.64]],[[.68,.62],[.18,.84],[-.34,.58],[-.48,.18],[-.12,-.12],[.22,-.28],[.42,-.64]]];
+ }else if(kind==='crescent'){
+   paths=[[[-.18,-.96],[-.62,-.62],[-.78,-.10],[-.62,.48],[-.12,.90],[.30,.72],[-.02,.50],[-.24,.10],[-.20,-.34],[.10,-.70],[-.18,-.96]]];
+ }else if(kind==='lotus'){
+   paths=[[[0,.70],[-.12,.18],[0,-.72],[.16,.18],[0,.70]],[[-.04,.66],[-.50,.24],[-.72,-.16],[-.22,.02],[0,.70]],[[.04,.66],[.50,.24],[.72,-.16],[.22,.02],[0,.70]]];
+ }else if(kind==='neuralCircuit'){
+   // Sustituye completamente al escarabajo: neurona/circuito orgánico, negro/gris,
+   // ramificado y pictórico. Se genera con el mismo lenguaje vivo de la obra.
+   organicNeuralCircuitForm();
+   return true;
+ }else{
+   paths=[[[0,-1.0],[.03,1.0]],[[-.62,-.18],[.58,-.10]],[[-.20,-.62],[-.04,-.88],[.18,-.62]]];
+ }
+ let all=[];
+ for(let pi=0;pi<paths.length;pi++){
+   let path=paths[pi],pts=path.map(q=>T(q[0],q[1]));
+   // Toda la trayectoria se redondea/respira antes de pintarse: cero zigzag eléctrico.
+   let live=smoothOrganicSymbolPath(pts,false); all.push(...live);
+   // Una sola trayectoria continua, orgánica y en degradé. Nunca pasadas desplazadas en serrucho.
+   let baseW=R(sc*.052,sc*.105)*R(.25,.50); // símbolos 50–75% más finos
+   organicSymbolBrush(live,baseW,'rgba(0,0,0,.95)');
+ }
+ if(all.length){
+   let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=sc*.28,x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H),rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,30,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,30,H-y0);
+   // Liquify OBLIGATORIO inmediatamente después de colocar el símbolo completo:
+   // nunca puede quedarse idéntico a la forma con la que nació.
+   liquifyRegion(x0,y0,rw,rh,R(.080,.145));
+   // Pelo, gris y mezcla: el signo queda integrado y parcialmente devorado por la obra.
+   organicHairOnBlackPoints(all,Math.round(R(27,51)),R(.90,1.50));
+ }
+}
+
+function twistedWhiteHumanoid(cx,cy,sc,rot,color='rgb(255,255,255)',mirror=1){
+ // Orientación 50/50 para museo: unas figuras conservan la cabeza arriba y otras se invierten,
+ // con cabeza hacia abajo y torso/pies hacia arriba, manteniendo el gesto orgánico.
+ if(Math.random()<.50) rot+=Math.PI;
+ // Nunca aparece ningún humanoide después de 15 segundos desde el comienzo de la obra.
+ if(typeof safeWorkStartedAt!=='undefined'&&finishAt>safeWorkStartedAt&&performance.now()-safeWorkStartedAt>=(finishAt-safeWorkStartedAt)*.75)return;
+ // Humanoide inspirado en el gesto del artista: masa orgánica continua, nunca copy/paste, nunca feather.
+ // Brazos elevados/retorcidos, torso comprimido y piernas quebradas; cambia proporción, giro, espejo y tensión en cada aparición.
+ const T=(x,y)=>{x*=mirror;return [cx+(Math.cos(rot)*x-Math.sin(rot)*y)*sc,cy+(Math.sin(rot)*x+Math.cos(rot)*y)*sc]};
+ let lean=R(-.20,.20),tw=R(-.20,.20),armL=R(.86,1.18),armR=R(.86,1.20),leg=R(.88,1.18);
+ let body=[[-.18+lean,-.70],[-.34+tw,-.50],[-.30,-.20],[-.52,.06],[-.34,.28],[-.18,.18],[-.10,.48],[-.30,.82*leg],[-.12,.96*leg],[.06,.70*leg],[.18,.42],[.34,.68*leg],[.54,.80*leg],[.44,.58*leg],[.26,.24],[.38,-.02],[.28,-.28],[.18,-.52],[.02+lean,-.72]];
+ let leftArm=[[-.25,-.48],[-.50,-.62],[-.62,-.88*armL],[-.55,-1.10*armL],[-.42,-.96*armL],[-.38,-.74]];
+ let rightArm=[[.10,-.54],[.34,-.70],[.42,-.98*armR],[.36,-1.18*armR],[.50,-1.08*armR],[.54,-.84]];
+ let head=[[-.17+lean,-.80],[-.11+lean,-.98],[.04+lean,-1.06],[.18+lean,-.96],[.17+lean,-.78],[.04+lean,-.69]];
+ // Cuello visible y continuo: la cabeza nunca queda cortada o flotando.
+ let neck=[[-.13+lean,-.78],[-.12+lean,-.66],[.08+lean,-.64],[.12+lean,-.79]];
+ // Palmas orgánicas unidas a los brazos; los dedos nacen de estas manos.
+ let leftHand=[[-.61,-1.08*armL],[-.68,-1.13*armL],[-.61,-1.20*armL],[-.52,-1.15*armL],[-.49,-1.05*armL]];
+ let rightHand=[[.34,-1.15*armR],[.39,-1.23*armR],[.49,-1.20*armR],[.54,-1.11*armR],[.46,-1.04*armR]];
+ let shapes=[body,neck,head,leftArm,rightArm,leftHand,rightHand],all=[];
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.fillStyle=color;
+ for(let sh of shapes){let pts=sh.map(q=>T(q[0]+R(-.025,.025),q[1]+R(-.025,.025)));all.push(...pts);g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++){let p=pts[i-1],q=pts[i],mx=(p[0]+q[0])*.5,my=(p[1]+q[1])*.5;g.quadraticCurveTo(p[0],p[1],mx,my)}g.closePath();g.fill()}
+ // Dedos/puntas nacen de las manos como prolongaciones de la misma masa, no líneas sueltas.
+ for(let side of [-1,1]){let base=T(side<0?-.60:.46,side<0?-1.14*armL:-1.16*armR);let n=R(3,6)|0;for(let i=0;i<n;i++){let spread=(i-(n-1)/2)*R(.10,.17),ang=(side<0?-2.0:-1.15)+spread+R(-.16,.16),L=R(sc*.11,sc*.24),w=R(sc*.022,sc*.048);organicTaperedExtension(base[0],base[1],ang,L,w,color,.018,.05)}}
+ // Toda figura humanoide se deforma INMEDIATAMENTE después de dibujarse: nunca queda rígida.
+ if(all.length){
+   let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=sc*.18;
+   let x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H);
+   let rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,24,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,24,H-y0);
+   liquifyRegion(x0,y0,rw,rh,R(.10,.13));
+ }
+ // Después del Liquify se trabaja la figura con pelos/filamentos orgánicos.
+ let hv=hairGray(),hairColor=color.includes('255')?`rgba(${hv},${hv},${hv},${R(.84,.98)})`:`rgba(${hv},${hv},${hv},${R(.84,.98)})`;
+ let hairRoots=[[-.27,-.50],[-.34,-.18],[-.18,.10],[.20,-.36],[.28,.02],[.18,.32],[-.10,.48]];
+ let hairN=Math.max(1,Math.round((R(10,22)|0)*.82*1.92*1.75)); // símbolos absorbidos por más filamento pictórico; conserva tonos y pelo global aprobado
+ for(let h=0;h<hairN;h++){
+   let root=pick(hairRoots),p=T(root[0]+R(-.08,.08),root[1]+R(-.07,.07));
+   let a=rot+R(-2.5,2.5),L=R(sc*.16,sc*.42),steps=R(12,26)|0,pts=[[p[0],p[1]]],x=p[0],y=p[1];
+   let turn=R(-.035,.035),wave=R(.85,2.0),phase=R(0,Math.PI*2);
+   for(let j=1;j<=steps;j++){let t=j/steps,st=L/steps*R(.82,1.18);a+=turn*Math.sin(t*Math.PI)+Math.sin(t*Math.PI*wave+phase)*R(-.060,.060)+R(-.022,.022);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);}
+   queueLivingHair(pts,R(.16,.72),R(4.6,7.8));
+ }
+ g.restore();
+ // Cabeza siempre negra, maciza y sin ningún rasgo: jamás ojos, boca, sonrisa ni líneas blancas.
+ // Se repinta DESPUÉS del liquify corporal para impedir que una marca clara invada la cara.
+ // La silueta queda irregular/deformada, como tensión y sufrimiento, pero completamente ciega y muda.
+ let sufferingHead=[[-.19+lean+R(-.05,.02),-.80+R(-.025,.015)],[-.14+lean+R(-.05,.01),-.98+R(-.045,.015)],[-.03+lean+R(-.035,.035),-1.10+R(-.045,.01)],[.10+lean+R(-.025,.05),-1.05+R(-.035,.02)],[.20+lean+R(-.015,.055),-.92+R(-.025,.04)],[.16+lean+R(-.02,.04),-.77+R(-.015,.035)],[.03+lean+R(-.04,.025),-.69+R(-.02,.025)]];
+ let hp=sufferingHead.map(q=>T(q[0],q[1]));
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.fillStyle='rgb(0,0,0)';
+ g.beginPath();g.moveTo(hp[0][0],hp[0][1]);
+ for(let i=1;i<hp.length;i++){let p=hp[i-1],q=hp[i],mx=(p[0]+q[0])*.5,my=(p[1]+q[1])*.5;g.quadraticCurveTo(p[0],p[1],mx,my)}
+ g.closePath();g.fill();g.restore();
+ // Segunda capa localizada de pelos: garantiza que ninguna figura negra quede como silueta grafica limpia.
+ if(!color.includes('255')) organicHairOnBlackPoints(all,Math.round(R(16,30)),R(.85,1.20));
+}
+
+function openingBlackHumanoids(){
+ if(suppressHumanoidsThisWork){humanoidReplacementForms();return;}
+ // Al principio: exactamente 3 o 4 elementos orgánicos, variados, deformados y fundidos.
+ let S=Math.min(W,H),count=pick([3,4]);
+ for(let i=0;i<count;i++){
+   let sizeBand=pick(['large','large','medium','medium','small']);
+   let sc=sizeBand==='large'?R(S*.22,S*.38):sizeBand==='medium'?R(S*.12,S*.22):R(S*.065,S*.13);
+   let cx=R(W*.10,W*.90),cy=R(H*.16,H*.84),rot=R(-1.15,1.15),mirror=Math.random()<.5?-1:1;
+   let kind=pick(['human','human','mystic','neural','suggestive']);
+   if(kind==='mystic') organicMysticCultureSymbol();
+   else if(kind==='neural') organicNeuralCircuitForm();
+   else if(kind==='suggestive') suggestiveBlackForm();
+   else twistedWhiteHumanoid(cx,cy,sc,rot,`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,mirror);
+ }
+}
+
+function organicClawStroke(points,w0,color,liqMin=.025,liqMax=.075){
+ // Trazo energético tipo garra: irregular, ancho en la raíz y afilado hasta desaparecer en punta.
+ // Nunca barra uniforme ni extremo redondo visible.
+ if(!points||points.length<2)return [];
+ let S=Math.min(W,H),dense=[],phase=R(0,Math.PI*2);
+ for(let i=0;i<points.length-1;i++){
+   let a=points[i],b=points[i+1],sub=3;
+   for(let k=0;k<sub;k++){
+     let t=k/sub,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+     let dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+     let globalT=(i+t)/(points.length-1),jitter=Math.sin(globalT*Math.PI*R(2.2,4.8)+phase)*w0*R(.025,.075)*(1-globalT);
+     dense.push([x+nx*jitter,y+ny*jitter]);
+   }
+ }
+ dense.push(points[points.length-1]);
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.strokeStyle=color;g.lineJoin='round';g.lineCap='butt';
+ for(let i=1;i<dense.length;i++){
+   let t=i/(dense.length-1),pulse=.84+.16*Math.sin(t*Math.PI*R(1.7,3.8)+phase);
+   let w=Math.max(.10,w0*Math.pow(1-t,1.38)*pulse*R(.94,1.06));
+   g.lineWidth=w;g.beginPath();g.moveTo(dense[i-1][0],dense[i-1][1]);g.lineTo(dense[i][0],dense[i][1]);g.stroke();
+ }
+ g.restore();
+ let xs=dense.map(p=>p[0]),ys=dense.map(p=>p[1]),pad=Math.max(S*.009,w0*.55),x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H),rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,20,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,20,H-y0);
+ liquifyRegion(x0,y0,rw,rh,R(liqMin,liqMax));
+ return dense;
+}
+
+function finalBlackArtistBrush(x0,y0,rw,rh,sc){
+ // Último retoque del artista: un brochazo negro orgánico cubre solo un lado de la forma blanca.
+ // Nunca es una figura nueva ni geométrica; es pintura negra sobre parte del gesto blanco.
+ let side=Math.random()<.5?-1:1,cx=x0+rw*.5,cy=y0+rh*.5;
+ let clipX=side<0?x0:cx,clipW=Math.max(2,rw*.52);
+ let a=side<0?R(-.38,.38):R(Math.PI-.38,Math.PI+.38);
+ let L=R(rw*.55,rw*.92),passes=R(2,5)|0,minx=W,maxx=0,miny=H,maxy=0;
+ g.save();g.beginPath();g.rect(clipX,y0,clipW,rh);g.clip();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.strokeStyle=`rgb(${R(0,9)|0},${R(0,9)|0},${R(0,9)|0})`;g.lineCap='butt';g.lineJoin='round';
+ for(let k=0;k<passes;k++){
+   let x=cx+side*R(-rw*.08,rw*.18),y=cy+R(-rh*.24,rh*.24),ang=a+R(-.20,.20),steps=R(12,24)|0,pts=[[x,y]];
+   for(let i=1;i<=steps;i++){let t=i/steps,st=L/steps*R(.82,1.18);ang+=Math.sin(t*Math.PI*R(.8,1.8)+k)*R(-.025,.025)+R(-.020,.020);x+=Math.cos(ang)*st;y+=Math.sin(ang)*st;pts.push([x,y]);minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+   // Brochazo negro convertido en garra: raíz gruesa, variación orgánica y punta afilada.
+   organicClawStroke(pts,R(sc*.12,sc*.26),g.strokeStyle,.025,.065);
+ }
+ g.restore();
+ // Liquify suave y únicamente en la pequeña zona retocada: nunca supera 13%.
+ let lx=clamp(clipX,0,W),ly=clamp(y0,0,H),lw=clamp(clipW,20,W-lx),lh=clamp(rh,20,H-ly);
+ liquifyRegion(lx,ly,lw,lh,R(.04,.13));
+}
+
+function whiteThroughBlack(m,force=false,lateFinal=false){
+ // Estos elementos orgánicos solo nacen durante la primera mitad de la obra; pueden ser blancos o negros.
+ if(finishAt>safeWorkStartedAt&&performance.now()-safeWorkStartedAt>(finishAt-safeWorkStartedAt)*.50)return;
+ let earlyLimit=Math.max(0,whiteFormTarget-finalWhiteFormsTarget);
+ if(!m||whiteFormCount>=whiteFormTarget||(!force&&whiteFormCount>=earlyLimit)||(!force&&Math.random()>.48))return;
+ let cx=null,cy=null;
+ for(let tries=0;tries<120;tries++){
+   let tx=clamp(R(m.x,m.x+m.w),1,W-2),ty=clamp(R(m.y,m.y+m.h),1,H-2);
+   let d=g.getImageData(Math.round(tx*D),Math.round(ty*D),1,1).data,lum=(d[0]+d[1]+d[2])/3;
+   if(lum<105){cx=tx;cy=ty;break}
+ }
+ if(cx===null)return;
+ whiteFormCount++;
+ let S=Math.min(W,H),whiteSizeVariation=R(1.25,1.75),sc=R(S*.045,S*.105)*whiteSizeVariation,rot=R(-Math.PI,Math.PI),kind=rareWhiteFrameThisWork?'claw':'body';
+ const T=(x,y)=>[cx+(Math.cos(rot)*x-Math.sin(rot)*y)*sc,cy+(Math.sin(rot)*x+Math.cos(rot)*y)*sc];
+ let paths=[];
+ if(kind==='pod')paths=[[[-.72,.12],[-.50,-.52],[-.05,-.88],[.45,-.58],[.72,.02],[.42,.62],[-.12,.82],[-.62,.50],[-.72,.12]],[[-.30,.10],[.02,-.18],[.34,.08]]];
+ else if(kind==='hook')paths=[[[-.62,-.62],[-.18,-.88],[.32,-.70],[.58,-.25],[.48,.30],[.12,.72],[-.32,.58],[-.48,.18]],[[-.10,.12],[.20,.02],[.38,-.18]]];
+ else if(kind==='claw')paths=[[[-.58,.62],[-.28,.10],[-.06,-.72]],[[0,.62],[.14,.08],[.34,-.82]],[[.46,.52],[.52,.04],[.76,-.58]],[[-.56,.62],[-.05,.76],[.46,.52]]];
+ else paths=[[[0,-.88],[-.28,-.48],[-.20,.02],[-.46,.70]],[[0,-.48],[.36,-.08],[.58,.16]],[[0,-.42],[-.36,-.06],[-.58,.18]],[[0,.02],[.28,.72]]];
+ let whiteObjectPts=[];
+ // Color del elemento definido antes de dibujarlo: blanco o negro, sin detener la animación.
+ let elementColor=Math.random()<.50?'rgb(255,255,255)':`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`;
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.strokeStyle=elementColor;g.lineCap='round';g.lineJoin='round';
+ for(let pi=0;pi<paths.length;pi++){
+   let pts=paths[pi].map(q=>T(q[0],q[1]));whiteObjectPts.push(...pts);
+   // Las líneas blancas gruesas finales son garras orgánicas: nunca barras de grosor uniforme.
+   organicClawStroke(pts,pi===0?R(sc*.20,sc*.36):R(sc*.10,sc*.22),elementColor,.025,.070);
+ }
+ let mysticWhitePts=[];
+ // Solo en la intervención blanca final: menos tridentes; a veces aparece un humanoide retorciéndose.
+ if(diabolicTipsThisWork && (!lateFinal || Math.random()<.55)){
+   if(lateFinal){
+     let tipAnchors=whiteObjectPts.slice(),nLate=Math.random()<.03?3:pick([1,2,4,5]);
+     // Tres puntas son excepcionales (3%); normalmente 1, 2, 4 o 5, siempre orgánicas.
+     for(let ti=0;ti<nLate;ti++){
+       let p=tipAnchors[R(0,tipAnchors.length)|0],dx=p[0]-cx,dy=p[1]-cy,outward=Math.atan2(dy,dx);if(!isFinite(outward)||Math.hypot(dx,dy)<sc*.12)outward=rot+R(-Math.PI,Math.PI);
+       let ang=outward+R(-.42,.42),ax=p[0]-Math.cos(ang)*sc*R(.05,.16),ay=p[1]-Math.sin(ang)*sc*R(.05,.16);
+       mysticWhitePts.push(...organicTaperedExtension(ax,ay,ang,R(sc*.45,sc*.95),R(sc*.16,sc*.28),elementColor,.07,.15));
+     }
+   }else mysticWhitePts=whiteMysticSpearTips(cx,cy,sc,rot,whiteObjectPts.slice());
+ }
+ whiteObjectPts.push(...mysticWhitePts);
+ if(lateFinal&&Math.random()<.58){let hc=Math.random()<.5?'rgb(255,255,255)':`rgb(${R(0,10)|0},${R(0,10)|0},${R(0,10)|0})`,hm=Math.random()<.5?-1:1;twistedWhiteHumanoid(cx+R(-sc*.45,sc*.45),cy+R(-sc*.35,sc*.35),R(sc*.55,sc*1.45),rot+R(-.85,.85),hc,hm);}
+ g.restore();
+ if(whiteObjectPts.length){let xs=whiteObjectPts.map(p=>p[0]),ys=whiteObjectPts.map(p=>p[1]),pad=sc*.28,x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H),rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,24,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,24,H-y0);liquifyRegion(x0,y0,rw,rh,R(.08,.12));
+ if(lateFinal&&Math.random()<finalBlackBrushChance)finalBlackArtistBrush(x0,y0,rw,rh,sc);
+ if(lateFinal){let hn=R(8,18)|0;for(let h=0;h<hn;h++){let hx=R(x0,x0+rw),hy=R(y0,y0+rh),ha=R(-Math.PI,Math.PI),hL=R(S*.025,S*.075),hpts=[[hx,hy]],steps=R(10,22)|0;for(let j=1;j<=steps;j++){ha+=R(-.045,.045);hx+=Math.cos(ha)*hL/steps;hy+=Math.sin(ha)*hL/steps;hpts.push([hx,hy])}queueStroke(hpts,R(.18,.75),`rgba(${R(150,215)|0},${R(150,215)|0},${R(150,215)|0},${R(.82,.98)})`,R(5.0,8.0),false);}}
+}
+}
+function continuousElement(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;if(performance.now()-safeWorkStartedAt>=15000*EXECUTION_SLOW)return;
+ if(preserveWhite())return;
+ let z=pick(zones),[cx,cy]=pt(z,.60),S=Math.min(W,H),sc=R(S*.16,S*.32),rot=R(-Math.PI,Math.PI),kind=pick(['body','hand','machine','mask']),pts=[];
+ const T=(x,y)=>[cx+Math.cos(rot)*x*sc-Math.sin(rot)*y*sc,cy+Math.sin(rot)*x*sc+Math.cos(rot)*y*sc];
+ let shape;
+ if(kind==='body')shape=[[-.18,-1], [.22,-.78],[.34,-.34],[.72,-.08],[.28,.10],[.18,.88],[-.18,.98],[-.28,.18],[-.72,-.05],[-.30,-.38],[-.18,-1]];
+ else if(kind==='hand')shape=[[-.45,.72],[-.28,.05],[-.48,-.62],[-.25,-.78],[-.04,-.18],[.02,-.96],[.24,-.94],[.24,-.15],[.48,-.78],[.68,-.62],[.42,.02],[.58,.54],[.12,.88],[-.45,.72]];
+ else if(kind==='machine')shape=[[-.90,.28],[-.52,-.18],[-.18,-.12],[.02,-.72],[.34,-.68],[.38,-.20],[.92,-.06],[.72,.28],[.34,.22],[.12,.78],[-.20,.68],[-.28,.22],[-.90,.28]];
+ else shape=[[-.62,.62],[-.74,.02],[-.42,-.64],[.05,-.92],[.62,-.52],[.76,.04],[.46,.66],[.04,.92],[-.62,.62]];
+ for(let q of shape)pts.push(T(q[0],q[1]));
+ let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pad=sc*.28,m={x:clamp(Math.min(...xs)-pad,0,W),y:clamp(Math.min(...ys)-pad,0,H),w:clamp(Math.max(...xs)-Math.min(...xs)+pad*2,90,W),h:clamp(Math.max(...ys)-Math.min(...ys)+pad*2,90,H)};
+ let white=Math.random()<.28;
+ queueStroke(pts,R(sc*.16,sc*.30),white?`rgba(255,255,255,1)`:`rgba(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0},1)`,R(5.5,9),true,()=>{massAreas.push(m);liquifyRegion(m.x,m.y,m.w,m.h,R(white?.40:.42,white?.60:.70));if(!white){blackClawTips(m);if(Math.random()<.45)whiteThroughBlack(m);}});
+}
+
+function horizonLandscape(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;if(performance.now()-safeWorkStartedAt>=15000*EXECUTION_SLOW)return;if(preserveWhite())return;let S=Math.min(W,H),y0=R(H*.42,H*.78),x0=R(-W*.08,W*.05),x1=R(W*.82,W*1.08),n=R(11,19)|0,top=[];for(let i=0;i<n;i++){let t=i/(n-1),x=x0+(x1-x0)*t,y=y0+Math.sin(t*Math.PI*R(1.1,2.7)+R(-.35,.35))*R(H*.015,H*.055)+R(-H*.018,H*.018);if(Math.random()<.20)y-=R(H*.035,H*.10);top.push([x,y])}let bottom=clamp(y0+R(H*.08,H*.22),0,H*1.05);g.save();g.fillStyle='rgba(3,3,3,.96)';g.beginPath();g.moveTo(top[0][0],top[0][1]);for(let i=1;i<top.length;i++){let p=top[i-1],q=top[i],mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2;g.quadraticCurveTo(p[0],p[1],mx,my)}g.lineTo(x1,bottom);g.lineTo(x0,bottom);g.closePath();g.fill();g.restore();}
+
+function mechanicalHint(){return;/* circular/face-like motif permanently disabled */}
+function humanHint(){return;/* disabled: no outlined/oval graphic humanoids */}
+function clawHint(){let z=pick(zones),[x,y]=pt(z,.7),S=Math.min(W,H),r=R(S*.025,S*.09),a=R(-Math.PI,Math.PI);g.save();g.strokeStyle=ink(.5,.72);g.lineWidth=R(1,5);g.lineCap='round';for(let q of [-1,1]){g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+Math.cos(a+q*.45)*r,y+Math.sin(a+q*.45)*r,x+Math.cos(a+q*.9)*r*1.5,y+Math.sin(a+q*.9)*r*1.5,x+Math.cos(a+q*1.15)*r*1.9,y+Math.sin(a+q*1.15)*r*1.9);g.stroke()}g.restore()}
+function connector(){
+ // Conexión pictórica orgánica: NUNCA recta, nunca rayo, nunca cable eléctrico geométrico.
+ if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW||zones.length<2)return;
+ let za=pick(zones),zb=pick(zones);if(za===zb)zb=zones[(zones.indexOf(za)+1)%zones.length];
+ let ax=W*za.x,ay=H*za.y,bx=W*zb.x,by=H*zb.y,dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy);if(L<20)return;
+ let base=Math.atan2(dy,dx),steps=R(42,86)|0,phase=R(0,Math.PI*2),amp=R(.16,.34),freq=R(1.05,2.15),pts=[];
+ for(let i=0;i<=steps;i++){
+   let t=i/steps,e=t*t*(3-2*t),x=ax+dx*e,y=ay+dy*e;
+   let envelope=Math.sin(Math.PI*t),normal=Math.sin(t*Math.PI*freq+phase)*L*R(.018,.050)*envelope;
+   let drift=Math.sin(t*Math.PI*R(.7,1.4)+phase*.41)*L*R(.006,.018)*envelope;
+   x+=Math.cos(base+Math.PI/2)*normal+Math.cos(base)*drift;
+   y+=Math.sin(base+Math.PI/2)*normal+Math.sin(base)*drift;
+   pts.push([x,y]);
+ }
+ queueLivingHair(pts,R(.18,.85),R(3.4,6.4));
+ if(Math.random()<.55){let p2=pts.map((p,i)=>{let t=i/(pts.length-1),off=Math.sin(Math.PI*t)*R(-7,7);return[p[0]+Math.cos(base+Math.PI/2)*off,p[1]+Math.sin(base+Math.PI/2)*off]});queueLivingHair(p2,R(.12,.55),R(3.8,6.8));}
+}
+function queueStroke(points,width,color,speed=1,pressure=true,onDone=null){strokeQueue.push({points,i:1,width,color,speed,carry:0,pressure,seed:R(0,20),onDone})}
+function paintStrokeFrame(dt){
+ if(!strokeQueue.length)return;
+ let active=Math.min(strokeQueue.length,Math.max(3,Math.round(22*thinkingPace)));
+ for(let qi=active-1;qi>=0;qi--){
+  let q=strokeQueue[qi],pts=q.points;
+  if(!pts||pts.length<2){strokeQueue.splice(qi,1);continue}
+  g.save();g.strokeStyle=q.color;g.lineCap='round';g.lineJoin='round';g.globalAlpha=1;
+  g.lineWidth=Math.max(.12,q.width);g.beginPath();g.moveTo(pts[0][0],pts[0][1]);
+  for(let j=1;j<pts.length-1;j++){
+   let p=pts[j],n=pts[j+1];
+   g.quadraticCurveTo(p[0],p[1],(p[0]+n[0])*.5,(p[1]+n[1])*.5);
+  }
+  let e=pts[pts.length-1];g.lineTo(e[0],e[1]);g.stroke();g.restore();
+  strokeQueue.splice(qi,1);if(q.onDone)q.onDone();
+ }
+}
+function filament(z=pick(zones),strength=1){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;
+ let S=Math.min(W,H),x=clamp(W*z.x+R(-W*.18,W*.18),0,W),y=clamp(H*z.y+R(-H*.18,H*.18),0,H),long=Math.random()<.84,L=long?R(S*.38,Math.max(W,H)*1.15):R(S*.12,S*.48),steps=R(long?58:28,long?130:68)|0;
+ let mode=Math.random(),a=R(-Math.PI,Math.PI),turn=0;
+ if(mode<.34){a=R(-2.8,-.35)} // ondulación abierta, nunca semicírculo/círculo
+ else if(mode<.56){a=Math.random()<.5?R(-.28,.28):R(Math.PI-.28,Math.PI+.28)} // lateral
+ else if(mode<.68){a=R(1.30,1.84)} // alguna vertical
+ else {a=R(-Math.PI,Math.PI)}
+ let baseAng=a,baseW=hairWidthVariation(R(.28,Math.random()<.16?6.5:2.5)*strength),pts=[[x,y]],px=x,py=y,phase=R(0,Math.PI*2),waveAmp=R(.18,.36),waveFreq=R(1.05,2.25);
+ for(let i=1;i<=steps;i++){let t=i/steps,step=L/steps*R(.76,1.24);a=baseAng+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp+R(-.012,.012);px+=Math.cos(a)*step;py+=Math.sin(a)*step;pts.push([px,py])}
+ queueStroke(pts,baseW,ink(baseW>3?.52:.78),R(2.2,4.8))
+}
+function tipLiquify(cx,cy,w){let rw=clamp(24+w*8,22,80),rh=rw,x=clamp(cx-rw/2,0,W-rw),y=clamp(cy-rh/2,0,H-rh);liquifyRegion(x,y,rw,rh,R(.008,.035))}
+function tangledField(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;
+ let z=pick(zones),S=Math.min(W,H),n=Math.round((R(24,52)|0)*1.75),[cx,cy]=pt(z,.70),mode=Math.random(),base=R(-Math.PI,Math.PI),turn=0,span=R(S*.18,S*.72);
+ if(mode<.38){base=R(-2.7,-.45);turn=(Math.random()<.5?-1:1)*R(.012,.032)}
+ else if(mode<.62)base=Math.random()<.5?R(-.35,.35):R(Math.PI-.35,Math.PI+.35);
+ else if(mode<.72)base=R(1.25,1.90);
+ for(let i=0;i<n;i++){let off=R(-S*.075,S*.075),x=cx+Math.cos(base+Math.PI/2)*off,y=cy+Math.sin(base+Math.PI/2)*off,a0=base+R(-.18,.18),a=a0,steps=R(30,78)|0,L=span*R(.55,1.15),pts=[[x,y]],phase=R(0,Math.PI*2),waveAmp=R(.17,.34),waveFreq=R(1.05,2.20);
+  for(let j=1;j<=steps;j++){let t=j/steps,step=L/steps*R(.8,1.2);a=a0+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp+R(-.012,.012);x+=Math.cos(a)*step;y+=Math.sin(a)*step;pts.push([x,y])}
+  queueLivingHair(pts,R(.16,1.45),R(1.4,3.2))}
+}
+function draggedMass(){
+ if(preserveWhite())return;
+ let S=Math.min(W,H),cx=R(W*.08,W*.76),cy=R(H*.04,H*.46),passes=R(3,7)|0,base=R(.70,2.20),pending=passes;
+ let minx=W,maxx=0,miny=H,maxy=0;
+ for(let k=0;k<passes;k++){let x=cx+R(-S*.018,S*.018),y=cy+R(-S*.018,S*.018),L=R(S*.30,S*.78),steps=R(42,82)|0,a=base+R(-.05,.05),pts=[[x,y]];
+  let formTurn=(Math.random()<.78?(Math.random()<.5?-1:1)*R(.012,.030):0),formPulse=R(.9,2.2);
+  for(let j=1;j<=steps;j++){let t=j/steps,st=L/steps;a+=formTurn*Math.sin(t*Math.PI)+Math.sin(t*Math.PI*formPulse+k*.1)*R(-.015,.015)+R(-.009,.009);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+  let blackScale=pick([1,1,1.4,1.8,2,2.5,3]);queueStroke(pts,Math.min(S*.18,R(8,22)*blackScale),`rgba(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0},1)`,R(5.8,9.5),true,()=>{if(--pending===0){let pad=S*.025,m={x:clamp(minx-pad,0,W),y:clamp(miny-pad,0,H),w:clamp(maxx-minx+pad*2,80,W),h:clamp(maxy-miny+pad*2,80,H)};massAreas.push(m);liquifyRegion(m.x,m.y,m.w,m.h,R(.40,.70));whiteThroughBlack(m);blackClawTips(m);}})
+ }
+}
+
+function whiteHairElement(m){return;/* eliminado: las líneas/pelos blancos casi rectos no pertenecen al estilo */}
+
+function conceptualHairForm(){
+ let S=Math.min(W,H),z=pick(zones),overBlack=massAreas.length&&Math.random()<.68,cx,cy;
+ if(overBlack){let m=pick(massAreas);cx=R(m.x,m.x+m.w);cy=R(m.y,m.y+m.h)}
+ else [cx,cy]=pt(z,.68);
+ let sc=R(S*.055,S*.16),rot=R(-Math.PI,Math.PI),kind=pick(['claw','hand','body','mask','needle','thornline','nail']);
+ const T=(x,y)=>[cx+(Math.cos(rot)*x-Math.sin(rot)*y)*sc,cy+(Math.sin(rot)*x+Math.cos(rot)*y)*sc];
+ let paths=[];
+ if(kind==='claw')paths=[[[-.65,.72],[-.28,.08],[0,-.88]],[[0,.72],[.18,.05],[.40,-1.0]],[[.48,.66],[.58,.04],[.92,-.70]]];
+ else if(kind==='hand')paths=[[[-.58,.72],[-.42,.12],[-.50,-.48]], [[-.30,.15],[-.22,-.92]], [[-.08,.12],[.02,-1.04]], [[.14,.14],[.32,-.88]], [[.34,.22],[.62,-.64]], [[-.58,.72],[-.12,.88],[.42,.62]]];
+ else if(kind==='hook')paths=[[[-.56,-.62],[-.22,-.96],[.26,-.88],[.58,-.48],[.62,.10],[.36,.58],[.02,.84],[-.38,.62],[-.60,.16],[-.56,-.62]],[[-.38,-.18],[-.10,-.34]],[[.10,-.34],[.38,-.16]],[[-.18,.30],[.08,.42],[.28,.26]]];
+ else if(kind==='spear')paths=[[[-1.65,.02],[-.48,-.03],[.58,0],[1.72,0]],[[1.05,-.24],[1.72,0],[1.05,.24]]];
+ else if(kind==='spearCross')paths=[[[-1.45,0],[1.62,0]],[[1.02,-.22],[1.62,0],[1.02,.22]],[[-.10,-1.12],[-.02,1.06]],[[-.32,-.62],[.24,-.62]]];
+ else if(kind==='__disabled_trident')paths=[[[-.85,.72],[-.18,.10],[.02,-1.05]],[[.02,-1.05],[-.24,-.68]],[[.02,-1.05],[.30,-.70]],[[.02,-1.05],[.02,-.52]]];
+ else if(kind==='hook')paths=[[[-.54,-.62],[-.16,-.92],[.30,-.78],[.58,-.34],[.50,.30],[.12,.80],[-.34,.62],[-.58,.10],[-.54,-.62]],[[-.34,-.18],[-.12,-.30]],[[.10,-.28],[.36,-.14]],[[-.18,.34],[.08,.44],[.28,.32]]];
+ else if(kind==='hook')paths=[[[-1,0],[-.48,-.30],[0,-.38],[.48,-.28],[1,0],[.48,.28],[0,.38],[-.48,.28],[-1,0]],[[0,-.16],[.14,0],[0,.16],[-.14,0],[0,-.16]]];
+ else if(kind==='body')paths=[[[0,-1],[-.28,-.55],[-.18,.05],[-.45,.82]],[[0,-.55],[.35,-.12],[.68,.10]],[[0,-.50],[-.38,-.12],[-.70,.14]],[[0,.02],[.28,.82]]];
+ else if(kind==='cross')paths=[[[-.08,-1],[.02,1]],[[-.68,-.10],[.70,.04]]];
+ else if(kind==='mask')paths=[[[-.58,-.65],[-.18,-.92],[.28,-.82],[.60,-.42],[.55,.28],[.12,.78],[-.34,.62],[-.62,.12],[-.58,-.65]],[[-.36,-.18],[-.12,-.30]],[[.12,-.28],[.36,-.16]]];
+ else if(kind==='thornline')paths=[[[-1.55,0],[-.82,-.04],[0,.03],[1.60,0]],[[-.88,-.02],[-.72,-.34]],[[-.42,0],[-.28,.30]],[[.08,.02],[.20,-.32]],[[.55,0],[.72,.29]],[[1.02,0],[1.17,-.27]]];
+ else if(kind==='nail')paths=[[[-1.25,.08],[-.40,0],[.36,-.02],[1.62,0]],[[.98,-.14],[1.62,0],[.98,.14]]];
+ else if(kind==='__disabled_mystic_zigzag')paths=[[[-.78,.72],[-.42,.20],[-.66,-.22],[-.22,-.72],[.02,-.28],[.34,-.86],[.66,-.36],[.42,.08],[.78,.62],[.20,.48],[-.10,.86],[-.42,.42]],[[-.34,-.08],[0,-.24],[.34,-.06]],[[0,-.24],[.08,.16],[-.04,.42]]];
+ else paths=[[[-1.15,0],[-.30,-.04],[.32,.02],[1.45,0]],[[.12,-.28],[.16,.26]]];
+ let all=[];
+ for(let path of paths){
+   let spine=path.map(q=>T(q[0],q[1]));all.push(...spine);
+   let hairs=Math.max(1,Math.round((R(6,13)|0)*.60*1.40));
+   for(let h=0;h<hairs;h++){
+     let off=R(-S*.009,S*.009),pts=[];
+     for(let j=0;j<spine.length;j++){
+       let p=spine[j],prev=spine[Math.max(0,j-1)],next=spine[Math.min(spine.length-1,j+1)];
+       let dx=next[0]-prev[0],dy=next[1]-prev[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+       let breathe=Math.sin((j/Math.max(1,spine.length-1))*Math.PI)*R(.55,1.20);
+       pts.push([p[0]+nx*off*breathe+R(-S*.0018,S*.0018),p[1]+ny*off*breathe+R(-S*.0018,S*.0018)]);
+     }
+     queueLivingHair(pts,R(.16,.78),R(4.2,7.5));
+   }
+ }
+ if(all.length){
+   let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=S*.030;
+   let x=clamp(Math.min(...xs)-pad,0,W),y=clamp(Math.min(...ys)-pad,0,H),
+       rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,35,W-x),
+       rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,35,H-y);
+   setTimeout(()=>liquifyRegion(x,y,rw,rh,R(.010,.028)),R(220,600)*EXECUTION_SLOW);
+ }
+}
+function hairCloud(){
+ let z=pick(zones),S=Math.min(W,H),groups=Math.max(1,Math.round((R(6.4,11.2)|0)*.60*1.92*1.75)); // +50% pelo sobre la versión anterior
+ for(let k=0;k<groups;k++){
+  let overBlack=massAreas.length&&Math.random()<.84;
+  let cx,cy;if(overBlack){let m=pick(massAreas);cx=R(m.x,m.x+m.w);cy=R(m.y,m.y+m.h)}else{[cx,cy]=pt(z,.68)}
+  let mode=Math.random(),base=R(-Math.PI,Math.PI),turn=0,n=Math.max(1,Math.round((R(overBlack?45:30,overBlack?83:61)|0)*.60*1.92*1.75)),L=(Math.random()<.42?R(S*.38,Math.max(W,H)*1.10):R(S*.12,S*.48)),pending=n;
+  let minx=W,maxx=0,miny=H,maxy=0;
+  if(mode<.42){base=R(-2.75,-.38);turn=(Math.random()<.5?-1:1)*R(.015,.040)}
+  else if(mode<.66)base=Math.random()<.5?R(-.32,.32):R(Math.PI-.32,Math.PI+.32);
+  else if(mode<.76)base=R(1.28,1.86);
+  for(let i=0;i<n;i++){
+   let off=R(-S*.045,S*.045),startShift=R(-L*.30,-L*.04),x=cx+Math.cos(base+Math.PI/2)*off+Math.cos(base)*startShift,y=cy+Math.sin(base+Math.PI/2)*off+Math.sin(base)*startShift,a0=base+R(-.28,.28),a=a0,steps=R(L>S*.50?48:24,L>S*.50?120:62)|0,pts=[[x,y]],phase=R(0,Math.PI*2),waveAmp=R(.18,.36),waveFreq=R(1.05,2.25);
+   minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);
+   for(let j=1;j<=steps;j++){let t=j/steps;a=a0+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp+R(-.012,.012);x+=Math.cos(a)*L/steps;y+=Math.sin(a)*L/steps;pts.push([x,y]);minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+   queueStroke(pts,hairWidthVariation(R(.12,.95)),(()=>{let v=hairGray();return `rgba(${v},${v},${v},${R(.62,.90)})`})(),R(3.8,7.5),false,()=>{if(--pending===0){let pad=S*.035,x0=clamp(minx-pad,0,W),y0=clamp(miny-pad,0,H),rw=clamp(maxx-minx+pad*2,80,W-x0),rh=clamp(maxy-miny+pad*2,80,H-y0);liquifyRegion(x0,y0,rw,rh,R(.20,.30));if(Math.random()<R(.05,.15))whiteHairElement({x:x0,y:y0,w:rw,h:rh});}});
+   // Cintas/veladuras ocasionales sobre la misma trayectoria orgánica: dan mezcla de tinta/carbón sin crear geometría.
+   if(Math.random()<.22){let vv=R(55,210)|0;queueStroke(pts,hairWidthVariation(R(1.15,3.2)),`rgba(${vv},${vv},${vv},${R(.035,.10)})`,R(3.5,6.8),false);}
+   if(Math.random()<.42)queueLivingHair(pts,R(.12,.95),R(3.8,7.5))
+  }
+ }
+ if(Math.random()<.88)(void 0);
+}
+function sweep(){let z=pick(zones),n=R(6,19)|0;for(let i=0;i<n;i++)filament(z,R(.7,1.7))}
+function liquifyRegion(x,y,rw,rh,maxPct=.05){
+ // Liquify aumentado: ~40% más uso; en algunos casos la fuerza puede duplicarse de forma orgánica.
+ let strongPass=Math.random()<.22;
+ maxPct=Math.min(strongPass?.26:.13,Math.max(.004,maxPct)*(strongPass?2:1.40));
+ let rhythmWave=liquifyRhythm==='veryFast'?1.08:liquifyRhythm==='fast'?.98:liquifyRhythm==='slow'?.72:.86;
+ // Deformación espacial real: se remuestrea la pintura original sin transparencia,
+ // sin pincel acuoso, sin duplicar contornos ni añadir manchas.
+ let sx=Math.max(0,Math.floor(x*D)),sy=Math.max(0,Math.floor(y*D));
+ let sw=Math.min(c.width-sx,Math.floor(rw*D)),sh=Math.min(c.height-sy,Math.floor(rh*D));
+ if(sw<16||sh<16)return;
+ let src=g.getImageData(sx,sy,sw,sh),dst=g.createImageData(sw,sh);
+ let a=src.data,b=dst.data,amp=Math.min(sw,sh)*clamp(maxPct,.004,.26)*R(.48,.82);
+ let horizontal=Math.random()<.5,sign=Math.random()<.5?-1:1;
+ let cx=sw*.5,cy=sh*.5,rx=sw*.5,ry=sh*.5;
+ for(let yy=0;yy<sh;yy++)for(let xx=0;xx<sw;xx++){
+   let nx=(xx-cx)/rx,ny=(yy-cy)/ry;
+   let envelope=Math.pow(Math.max(0,1-nx*nx),1.7)*Math.pow(Math.max(0,1-ny*ny),1.7);
+   // Una sola ondulación grande, de baja frecuencia, sin vibraciones.
+   let wave=horizontal?Math.sin(ny*Math.PI*.82*rhythmWave+.45):Math.sin(nx*Math.PI*.82*rhythmWave+.45);
+   let delta=sign*amp*envelope*wave;
+   let fx=clamp(xx-(horizontal?delta:0),0,sw-1),fy=clamp(yy-(horizontal?0:delta),0,sh-1);
+   let x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),tx=fx-x0,ty=fy-y0;
+   let k00=(y0*sw+x0)*4,k10=(y0*sw+x1)*4,k01=(y1*sw+x0)*4,k11=(y1*sw+x1)*4,j=(yy*sw+xx)*4;
+   for(let ch=0;ch<3;ch++){let v0=a[k00+ch]*(1-tx)+a[k10+ch]*tx,v1=a[k01+ch]*(1-tx)+a[k11+ch]*tx;b[j+ch]=v0*(1-ty)+v1*ty}
+   b[j+3]=255;
+ }
+ g.putImageData(dst,sx,sy);
+}
+// "Toalla de papel": levanta negro dentro de la masa y deja grises/blancos irregulares antes de volver a mezclar.
+function liftBlack(){ /* No agregar aguadas ni levantar pigmento: conservar masa y grises. */ }
+function sculptMassLiquify(){if(massAreas.length){let m=pick(massAreas),pad=R(.02,.07)*Math.min(W,H),x=clamp(m.x-pad,0,W),y=clamp(m.y-pad,0,H),rw=clamp(m.w+pad*2,90,W-x),rh=clamp(m.h+pad*2,90,H-y);liquifyRegion(x,y,rw,rh,R(.40,.70));if(Math.random()<.72)liftBlack();return}if(!zones.length)return;let z=pick(zones),rw=R(W*.20,W*.42),rh=R(H*.18,H*.40),x=clamp(W*z.x-rw/2,0,W-rw),y=clamp(H*z.y-rh/2,0,H-rh);liquifyRegion(x,y,rw,rh,R(.40,.70))}
+function wholeWorkLiquify(){let pads=[[0,0,W,H],[0,0,W*.55,H*.55],[W*.45,0,W*.55,H*.55],[0,H*.45,W*.55,H*.55],[W*.45,H*.45,W*.55,H*.55],[W*.18,H*.18,W*.64,H*.64]];pads.sort(()=>Math.random()-.5);for(let i=0;i<4;i++){let q=pads[i];liquifyRegion(q[0],q[1],q[2],q[3],R(.004,.018))}}
+// Liquify: deformación del dibujo existente, nunca supera 5% de la dimensión del área afectada.
+function liquify(maxPct=.06){if(!zones.length)return;let z=pick(zones),rw=clamp(W*z.rx*3,110,W*.7),rh=clamp(H*z.ry*3,110,H*.7);liquifyRegion(clamp(W*z.x-rw/2,0,W-rw),clamp(H*z.y-rh/2,0,H-rh),rw,rh,maxPct)}
+function spatialTension(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;if(performance.now()-safeWorkStartedAt>=15000*EXECUTION_SLOW)return;if(!zones.length)return;let heavy=pick(zones),ox=1-heavy.x,oy=1-heavy.y,z={x:clamp(ox+R(-.10,.10),.05,.95),y:clamp(oy+R(-.10,.10),.05,.95),rx:.05,ry:.05,dir:R(-Math.PI,Math.PI)};filament(z,R(.35,.75));if(Math.random()<.45)filament(z,R(.25,.55))}
+function gesture(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW){hairCloud();return;}if(landscapeWork&&!landscapeDone&&actionsDone>18){landscapeDone=true;horizonLandscape();return}let r=Math.random();if(profile.planes>0&&Math.random()<.055){if(Math.random()<.72){continuousElement();}else{(void 0);}profile.planes--}else if(profile.connectors>0&&Math.random()<.13){connector();profile.connectors--}else if(profile.mechanical>0&&Math.random()<.06){Math.random()<.45?continuousElement():/* mechanical faces/elements disabled */profile.mechanical--}else if(profile.human>0&&Math.random()<.06){if(Math.random()<.55){continuousElement();}else{(void 0);}profile.human--}else if(r<.12)filament();else if(r<.24)tangledField();else if(r<.72)hairCloud();else if(r<.88)continuousElement();else if(r<.93)(void 0);else sweep();if(Math.random()<.08)spatialTension();if(actionsDone>25&&Math.random()<.002)rareSpine();}
+function rareSpine(){return;}
+
+let finalDetailsDone=false;
+function finalDetailStroke(points,w,v=R(18,175)|0,a=R(.58,.90)){
+ if(!points||points.length<2)return;
+ g.save();g.strokeStyle=`rgba(${v},${v},${v},${a})`;g.lineCap='round';g.lineJoin='round';g.lineWidth=Math.max(.35,w);
+ g.beginPath();g.moveTo(points[0][0],points[0][1]);
+ for(let i=1;i<points.length-1;i++){let p=points[i],q=points[i+1];g.quadraticCurveTo(p[0],p[1],(p[0]+q[0])*.5,(p[1]+q[1])*.5)}
+ let p=points[points.length-2],q=points[points.length-1];g.quadraticCurveTo(p[0],p[1],q[0],q[1]);g.stroke();g.restore();
+}
+function finalConceptElement(){return;/* sin humanoides después del 75% de la obra */}
+
+function addFinalConceptElements(){
+ if(finalDetailsDone)return;finalDetailsDone=true;
+ // Si la obra ya respira bien, no obliga a poner un sello. Normalmente 0–1; rara vez 2.
+ let n=Math.random()<.52?1:0;
+ for(let i=0;i<n;i++)finalConceptElement();
+}
+
+
+
+let extraBlackHairDone=false,crossDaggerDone=false,otherSealWindowDone=false,otherSealAt=0,daggerThisWork=false,fenceThisWork=false,fenceDrawn=false,finalCrossDrawn=false;
+let denseBlackHairWork=true,denseBlackHairDone=false,denseBlackHairFinalDone=false; // 100%: TODAS las áreas negras reciben filamento muy abundante y ondulado.
+let pointedBlackMasses=new WeakSet(); // Toda masa negra NO humanoide debe terminar en puntas orgánicas; una sola aplicación por masa.
+function ensurePointedBlackMass(m){if(!m||pointedBlackMasses.has(m))return;pointedBlackMasses.add(m);blackClawTips(m);}
+let cornerSpineWork=false,cornerSpineDone=false;
+let balanceDetailDone=false,blackBalanceDone=false,diabolicTipsThisWork=false,rareWhiteFrameThisWork=false;
+function balanceOppositeDetail(){balanceDetailDone=true;}
+function blackCoverageSample(){let step=Math.max(5,Math.round(Math.min(W,H)/115)),dark=0,total=0,left=0,right=0,leftN=0,rightN=0;for(let y=step>>1;y<H;y+=step){for(let x=step>>1;x<W;x+=step){let d=g.getImageData(x,y,1,1).data,lum=(d[0]+d[1]+d[2])/3,isDark=lum<105;total++;if(isDark)dark++;if(x<W*.5){leftN++;if(isDark)left++}else{rightN++;if(isDark)right++}}}return{ratio:total?dark/total:0,left:leftN?left/leftN:0,right:rightN?right/rightN:0}}
+function organicBalanceBlackMass(side){let S=Math.min(W,H),cx=side<0?R(W*.12,W*.38):R(W*.62,W*.88),cy=R(H*.18,H*.82),span=R(H*.24,H*.52),bw=R(S*.055,S*.105),passes=R(3,6)|0,minx=W,maxx=0,miny=H,maxy=0;g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.strokeStyle=`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`;g.lineCap='round';g.lineJoin='round';for(let k=0;k<passes;k++){let x=cx+R(-bw,bw),y=cy+R(-bw,bw),a=R(-2.5,2.5),steps=R(22,40)|0;g.lineWidth=bw*R(.72,1.18);g.beginPath();g.moveTo(x,y);for(let i=1;i<=steps;i++){let t=i/steps;a+=Math.sin(t*Math.PI*R(.8,2.1)+k)*R(-.035,.035)+R(-.025,.025);x+=Math.cos(a)*span/steps;y+=Math.sin(a)*span/steps;minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);g.lineTo(x,y)}g.stroke()}g.restore();let pad=bw*1.4,x0=clamp(minx-pad,0,W),y0=clamp(miny-pad,0,H),rw=clamp(maxx-minx+pad*2,30,W-x0),rh=clamp(maxy-miny+pad*2,30,H-y0);let m={x:x0,y:y0,w:rw,h:rh};massAreas.push(m);liquifyRegion(x0,y0,rw,rh,R(.035,.075));if(Math.random()<.75)blackClawTips(m);}
+function ensureBlackBalance35(){if(blackBalanceDone)return;blackBalanceDone=true;let c=blackCoverageSample(),guard=0;while(c.ratio<.35&&guard++<7){organicBalanceBlackMass(c.left<=c.right?-1:1);c=blackCoverageSample();}}
+
+let spermTargetThisWork=1,fenceTargetThisWork=1,fenceCount=0,personalSealWork=false,personalSealCount=0,personalSealsDone=false;
+let pickaxeSurpriseWork=false,pickaxeSurpriseDone=false,earlyRootClusterWork=false,earlyRootClusterDone=false,earlyRootClusterAt=0;
+function extraHairOnBlackForms(){
+ if(!massAreas.length)return;
+ let S=Math.min(W,H),count=Math.min(massAreas.length,R(4,8)|0);
+ for(let q=0;q<count;q++){
+   let m=pick(massAreas),n=R(52,92)|0;
+   for(let i=0;i<n;i++){
+     let x=R(m.x,m.x+m.w),y=R(m.y,m.y+m.h),a=R(-Math.PI,Math.PI);
+     let lengthClass=Math.random(),L=lengthClass<.34?R(S*.025,S*.075):lengthClass<.72?R(S*.075,S*.18):R(S*.18,S*.34);
+     let steps=R(18,48)|0,pts=[[x,y]],baseAng=a,phase=R(0,Math.PI*2),waveAmp=R(.24,.46),waveFreq=R(1.10,2.45);
+     for(let j=1;j<=steps;j++){let t=j/steps;a=baseAng+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp+Math.sin(t*Math.PI+phase*.3)*R(.035,.08)+R(-.018,.018);x+=Math.cos(a)*L/steps;y+=Math.sin(a)*L/steps;pts.push([x,y])}
+     // 5% a 80% de negro = gris muy claro a gris oscuro.
+     let blackPct=R(.55,.80),gray=Math.round(255*(1-blackPct));
+     let widthScale=Math.random()<.32?R(1.35,2.0):1;
+     queueStroke(pts,R(.16,1.10)*widthScale,`rgba(${gray},${gray},${gray},${R(.55,.88)})`,R(4.0,7.5),false);
+   }
+ }
+}
+// En el 100% de las obras, cada área negra recibe una capa orgánica de filamentos
+// suficiente para ocupar visualmente al menos ~35% de la masa, sin convertirla en una trama uniforme.
+function paintReferenceDenseHairImmediate(m){
+ // Referencia aprobada: TODA masa negra queda atravesada por una trama abundante,
+ // orgánica y ondulada. Se pinta inmediatamente para que ninguna masa llegue al final
+ // esperando en la cola de animación sin suficiente pelo.
+ let S=Math.min(W,H),areaFrac=clamp((m.w*m.h)/(W*H),.012,.42);
+ let n=Math.round(clamp(180+areaFrac*620,195,390));
+ g.save();g.globalCompositeOperation='source-over';g.lineCap='round';g.lineJoin='round';
+ for(let i=0;i<n;i++){
+   let x=R(m.x+m.w*.025,m.x+m.w*.975),y=R(m.y+m.h*.025,m.y+m.h*.975);
+   let baseAng=R(-Math.PI,Math.PI),phase=R(0,Math.PI*2);
+   let L=R(Math.max(S*.030,m.w*.12),Math.max(S*.095,m.w*.52));
+   let steps=R(20,38)|0,pts=[[x,y]],amp=R(.42,.72),freq=R(1.35,2.85);
+   for(let j=1;j<=steps;j++){
+     let t=j/steps,ang=baseAng+Math.sin(t*Math.PI*freq+phase)*amp+Math.sin(t*Math.PI*1.15+phase*.37)*R(.04,.10);
+     let st=L/steps*R(.86,1.14);
+     x=clamp(x+Math.cos(ang)*st,m.x,m.x+m.w);y=clamp(y+Math.sin(ang)*st,m.y,m.y+m.h);
+     pts.push([x,y]);
+   }
+   // Mismo lenguaje: negros/grises, grosor variable y degradé a lo largo del filamento.
+   let parts=R(4,7)|0,reverse=Math.random()<.50;
+   let b0=R(.88,.99),b1=R(.00,.08);if(reverse){let z=b0;b0=b1;b1=z;}
+   let bw=hairWidthVariation(R(.16,1.05));
+   for(let k=0;k<parts;k++){
+     let a=Math.floor(k*(pts.length-1)/parts),b=Math.min(pts.length-1,Math.ceil((k+1)*(pts.length-1)/parts)+1);
+     let t=(k+.5)/parts,blackness=clamp(b0+(b1-b0)*t+R(-.025,.025),.00,.99),v=Math.round(255*(1-blackness));
+     g.strokeStyle=`rgba(${v},${v},${v},${R(.42,.76)})`;g.lineWidth=Math.max(.10,bw*R(.72,1.45));
+     g.beginPath();g.moveTo(pts[a][0],pts[a][1]);
+     for(let q=a+1;q<=b;q++){let p=pts[q-1],r=pts[q];g.quadraticCurveTo(p[0],p[1],(p[0]+r[0])*.5,(p[1]+r[1])*.5)}
+     g.stroke();
+   }
+ }
+ g.restore();
+}
+function ensureDenseHairOnEveryBlackArea35(){
+ if(!denseBlackHairWork||denseBlackHairDone||!massAreas.length)return;
+ denseBlackHairDone=true;
+ let S=Math.min(W,H),areas=massAreas.slice();
+ for(let ai=0;ai<areas.length;ai++){
+   let m=areas[ai];
+   // Todas las formas negras salvo los humanoides terminan en puntas orgánicas.
+   ensurePointedBlackMass(m);
+   // PRIMERA PASADA inmediata: garantiza la densidad de la referencia en TODAS las masas.
+   paintReferenceDenseHairImmediate(m);
+   // SEGUNDA PASADA animada: añade movimiento y profundidad sin depender de ella para la cobertura.
+   let areaFrac=clamp((m.w*m.h)/(W*H),.015,.42);
+   let n=Math.round(clamp(90+areaFrac*260,100,190));
+   for(let i=0;i<n;i++){
+     let x=R(m.x+m.w*.04,m.x+m.w*.96),y=R(m.y+m.h*.04,m.y+m.h*.96);
+     let baseAng=R(-Math.PI,Math.PI),L=R(Math.max(S*.025,m.w*.10),Math.max(S*.08,m.w*.42));
+     let steps=R(18,38)|0,pts=[[x,y]],phase=R(0,Math.PI*2),amp=R(.27,.50),freq=R(1.15,2.50);
+     for(let j=1;j<=steps;j++){
+       let t=j/steps,a=baseAng+Math.sin(t*Math.PI*freq+phase)*amp+Math.sin(t*Math.PI+phase*.4)*R(.04,.09);
+       let st=L/steps*R(.82,1.18);x=clamp(x+Math.cos(a)*st,m.x,m.x+m.w);y=clamp(y+Math.sin(a)*st,m.y,m.y+m.h);pts.push([x,y]);
+     }
+     queueLivingHair(pts,R(.18,1.05),R(4.0,7.4));
+   }
+ }
+}
+
+let exactSealDone=false;
+
+function sealGrayValue(){return Math.round(R(13,102));} // 95% a 60% de negro
+function sealGradientTone(base,t){ // degradé orgánico continuo, nunca franjas gráficas
+ let drift=R(18,38),wave=(.5+.5*Math.sin(t*Math.PI+R(-.35,.35)));
+ return clamp(Math.round(base+drift*wave),13,115);
+}
+function findSealCenter(minLum=125){
+ for(let k=0;k<90;k++){
+   let x=R(W*.08,W*.92),y=R(H*.08,H*.92),d=g.getImageData(Math.round(x*D),Math.round(y*D),1,1).data,lum=(d[0]+d[1]+d[2])/3;
+   if(lum>=minLum)return [x,y];
+ }
+ return [R(W*.15,W*.85),R(H*.15,H*.85)];
+}
+function blackBrainClawSurprise(){
+ let S=Math.min(W,H),cc=findSealCenter(145),cx=cc[0],cy=cc[1],sc=R(S*.12,S*.24),rot=R(-Math.PI,Math.PI),lobes=R(5,9)|0,all=[];
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.fillStyle=`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`;
+ for(let i=0;i<lobes;i++){
+   let a=Math.PI*2*i/lobes+R(-.22,.22),rr=R(.28,.62),x=cx+Math.cos(a)*sc*rr,y=cy+Math.sin(a)*sc*rr,rx=sc*R(.25,.48),ry=sc*R(.18,.38),n=18,pts=[];
+   for(let j=0;j<n;j++){let q=Math.PI*2*j/n,r=1+R(-.12,.12);pts.push([x+Math.cos(q+rot)*rx*r,y+Math.sin(q+rot)*ry*r]);}
+   all.push(...pts);g.beginPath();g.moveTo(...pts[0]);for(let j=1;j<=n;j++){let p0=pts[(j-1)%n],p1=pts[j%n];g.quadraticCurveTo(p0[0],p0[1],(p0[0]+p1[0])*.5,(p0[1]+p1[1])*.5)}g.closePath();g.fill();
+ }
+ g.restore();
+ if(all.length){let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=sc*.28,m={x:clamp(Math.min(...xs)-pad,0,W),y:clamp(Math.min(...ys)-pad,0,H),w:0,h:0};m.w=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,40,W-m.x);m.h=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,40,H-m.y);massAreas.push(m);liquifyRegion(m.x,m.y,m.w,m.h,R(.10,.13));blackClawTips(m);}
+}
+function humanoidReplacementForms(){
+ let n=R(1,4)|0;for(let i=0;i<n;i++){if(Math.random()<.55)blackBrainClawSurprise();else suggestiveBlackForm();}
+}
+function organicNeuralCircuitForm(){
+ // Red negra orgánica: neuronas/circuitos sugeridos, nunca diagrama geométrico ni electrónico limpio.
+ let S=Math.min(W,H),z=pick(zones),[cx,cy]=pt(z,.72),sc=R(S*.10,S*.23),rot=R(-Math.PI,Math.PI),branches=R(8,15)|0;
+ let nodes=[[cx,cy]],all=[[cx,cy]];
+ g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.lineCap='round';g.lineJoin='round';
+ // Núcleo irregular, como cerebro/neurona pintada.
+ let lobes=R(6,11)|0,core=[];
+ for(let i=0;i<lobes;i++){let a=Math.PI*2*i/lobes+R(-.18,.18),rr=sc*R(.18,.38);core.push([cx+Math.cos(a+rot)*rr*R(.75,1.25),cy+Math.sin(a+rot)*rr*R(.65,1.20)])}
+ g.fillStyle=`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`;g.beginPath();g.moveTo(...core[0]);for(let i=1;i<core.length;i++){let p=core[i-1],q=core[i],mx=(p[0]+q[0])*.5,my=(p[1]+q[1])*.5;g.quadraticCurveTo(p[0],p[1],mx,my)}g.closePath();g.fill();all.push(...core);
+ // Ramificaciones tensas y asimétricas: evocan axones y circuitos invadidos por materia viva.
+ for(let b=0;b<branches;b++){
+   let a=rot+Math.PI*2*b/branches+R(-.55,.55),x=cx+Math.cos(a)*sc*.18,y=cy+Math.sin(a)*sc*.18,L=R(sc*.75,sc*1.85),steps=R(16,30)|0,pts=[[x,y]];
+   for(let j=1;j<=steps;j++){let t=j/steps,st=L/steps*R(.78,1.22);a+=Math.sin(t*Math.PI*R(.8,2.2)+b)*R(-.045,.045)+R(-.055,.055);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);all.push([x,y])}
+   organicClawStroke(pts,R(sc*.045,sc*.11)*R(.25,.50),`rgb(${R(0,10)|0},${R(0,10)|0},${R(0,10)|0})`,.025,.09);
+   if(Math.random()<.58){let p=pts[R(Math.floor(steps*.45),steps)|0],r=R(sc*.055,sc*.13);g.fillStyle=`rgb(${R(0,12)|0},${R(0,12)|0},${R(0,12)|0})`;g.beginPath();for(let k=0;k<7;k++){let aa=Math.PI*2*k/7,rr=r*R(.65,1.25),xx=p[0]+Math.cos(aa)*rr,yy=p[1]+Math.sin(aa)*rr;k?g.lineTo(xx,yy):g.moveTo(xx,yy)}g.closePath();g.fill();all.push(p)}
+ }
+ g.restore();
+ if(all.length){let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=sc*.22,x0=clamp(Math.min(...xs)-pad,0,W),y0=clamp(Math.min(...ys)-pad,0,H),rw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,30,W-x0),rh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,30,H-y0);liquifyRegion(x0,y0,rw,rh,R(.06,.13));}
+}
+function barbedFenceSeal(){
+ let S=Math.min(W,H),horizontal=Math.random()<.78,span=R(.60,1.00),v=sealGrayValue();
+ let x1,y1,x2,y2;
+ if(horizontal){
+   let cy=R(H*.16,H*.84),L=W*span,x1c=R(0,W-L);
+   x1=x1c;y1=cy+R(-H*.04,H*.04);x2=x1c+L;y2=cy+R(-H*.04,H*.04);
+ }else{
+   let cx=R(W*.12,W*.88),L=H*span,y1c=R(0,H-L);
+   x1=cx+R(-W*.03,W*.03);y1=y1c;x2=cx+R(-W*.03,W*.03);y2=y1c+L;
+ }
+ let dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,bend=R(-S*.035,S*.035),steps=72,pts=[];
+ for(let i=0;i<=steps;i++){let t=i/steps,e=Math.sin(Math.PI*t);pts.push([x1+dx*t+nx*bend*e,y1+dy*t+ny*bend*e])}
+ let strands=Math.random()<.52?2:1;
+ g.save();g.lineCap='round';g.lineJoin='round';
+ for(let q=0;q<strands;q++){
+   let off=(q-(strands-1)/2)*R(S*.006,S*.016);
+   g.strokeStyle=`rgba(${v},${v},${v},${R(.78,.94)})`;g.lineWidth=R(.65,2.1);
+   g.beginPath();g.moveTo(pts[0][0]+nx*off,pts[0][1]+ny*off);
+   for(let i=1;i<pts.length-1;i++){let p=pts[i],r=pts[i+1];g.quadraticCurveTo(p[0]+nx*off,p[1]+ny*off,(p[0]+r[0])*.5+nx*off,(p[1]+r[1])*.5+ny*off)}
+   g.lineTo(pts[pts.length-1][0]+nx*off,pts[pts.length-1][1]+ny*off);g.stroke();
+ }
+ // Púas como las referencias: pequeños nudos y dos espinas opuestas, integradas en la cuerda.
+ let barbs=R(5,11)|0;
+ for(let k=0;k<barbs;k++){
+   let t=R(.08,.92),i=Math.max(2,Math.min(steps-2,Math.round(t*steps))),p=pts[i],bl=R(S*.014,S*.055);
+   for(let sg of [-1,1]){
+     let along=R(-.20,.28)*bl;
+     g.lineWidth=R(.55,1.45);g.beginPath();g.moveTo(p[0],p[1]);
+     g.quadraticCurveTo(p[0]+nx*bl*.45*sg+dx/L*along*.4,p[1]+ny*bl*.45*sg+dy/L*along*.4,p[0]+nx*bl*sg+dx/L*along,p[1]+ny*bl*sg+dy/L*along);g.stroke();
+   }
+ }
+ g.restore();
+ let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pad=S*.06,bx=clamp(Math.min(...xs)-pad,0,W),by=clamp(Math.min(...ys)-pad,0,H),
+     bw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,60,W-bx),bh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,60,H-by);
+}
+function spearSealLarge(){
+ let S=Math.min(W,H),cx=R(W*.22,W*.78),cy=R(H*.18,H*.82),a=R(-Math.PI,Math.PI),L=Math.max(W,H)*R(.52,.72);
+ let dx=Math.cos(a),dy=Math.sin(a),nx=-dy,ny=dx,x1=cx-dx*L*.42,y1=cy-dy*L*.42,x2=cx+dx*L*.58,y2=cy+dy*L*.58;
+ g.save();g.strokeStyle=`rgba(${R(20,55)|0},${R(20,55)|0},${R(20,55)|0},.88)`;g.lineCap='round';g.lineJoin='round';g.lineWidth=R(1.0,3.2);
+ g.beginPath();g.moveTo(x1,y1);g.quadraticCurveTo(cx+nx*R(-S*.018,S*.018),cy+ny*R(-S*.018,S*.018),x2,y2);g.stroke();
+ let h=R(S*.035,S*.075);g.fillStyle=g.strokeStyle;g.beginPath();g.moveTo(x1,y1);g.lineTo(x1+dx*h*1.8+nx*h*.52,y1+dy*h*1.8+ny*h*.52);g.lineTo(x1+dx*h*1.35-nx*h*.35,y1+dy*h*1.35-ny*h*.35);g.closePath();g.fill();g.restore();
+ let pad=S*.08,bx=clamp(Math.min(x1,x2)-pad,0,W),by=clamp(Math.min(y1,y2)-pad,0,H),bw=clamp(Math.abs(x2-x1)+pad*2,60,W-bx),bh=clamp(Math.abs(y2-y1)+pad*2,60,H-by);liquifyRegion(bx,by,bw,bh,.13);
+}
+
+function drawSealStroke(pts,w,v=sealGrayValue()){
+ if(!pts||pts.length<2)return;
+ // Los sellos de Manuel son tinta oscura: nunca se invierten a blanco ni crean puntos claros.
+ for(let i=1;i<pts.length;i++){
+   let p0=pts[i-1],p1=pts[i],tone=clamp(v+R(-5,5),0,55)|0;
+   g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';
+   g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+   g.strokeStyle=`rgb(${tone},${tone},${tone})`;g.lineWidth=Math.max(.35,w);g.lineCap='round';g.lineJoin='round';
+   g.beginPath();g.moveTo(p0[0],p0[1]);g.lineTo(p1[0],p1[1]);g.stroke();g.restore();
+ }
+
+ let bb=sealBoundsFromPoints(pts,Math.max(12,w*5));
+ if(bb)liquifySeal13(bb.x,bb.y,bb.w,bb.h);
+
+ let rb=sealBoundsFromPoints(pts,Math.max(16,w*6));
+ if(rb)registerFinalSealRegion(rb.x,rb.y,rb.w,rb.h);
+}function visibleSignatureMotif(kind){if(kind==='trident')kind=pick(['claw','hand','mystic']);if(['head','eye','face','mouth','humanoid'].includes(kind))kind=pick(['claw','hand']);if(['hook'].includes(kind))kind=pick(['claw','hand']);if(['spear','crossSpear','bladeCluster'].includes(kind))kind=pick(['claw','hand']);
+ let S=Math.min(W,H),cx=R(W*.14,W*.86),cy=R(H*.15,H*.85),sc=R(S*.10,S*.24),rot=R(-Math.PI,Math.PI);
+ const T=(x,y)=>[cx+(Math.cos(rot)*x-Math.sin(rot)*y)*sc,cy+(Math.sin(rot)*x+Math.cos(rot)*y)*sc];
+ let paths=[];
+ if(kind==='barbed')paths=[[[-1.8,0],[-.8,-.03],[0,.03],[1.8,0]],[[-1.15,0],[-.98,-.38]],[[-.58,0],[-.42,.34]],[[.08,.02],[.24,-.38]],[[.70,0],[.88,.34]],[[1.22,0],[1.38,-.30]]];
+ else if(kind==='__disabled_spear')paths=[[[-1.55,0],[-.35,-.03],[.55,0],[1.65,0]],[[1.02,-.28],[1.65,0],[1.02,.28]]];
+ else if(kind==='__disabled_crossSpear')paths=[[[-1.45,0],[1.55,0]],[[.98,-.25],[1.55,0],[.98,.25]],[[-.06,-1.0],[.02,1.0]],[[-.52,-.40],[.48,-.40]]];
+ else if(kind==='pod')paths=[[[-.20,.95],[-.34,.28],[-.22,-.42],[0,-.96],[.25,-.40],[.32,.28],[.12,.95]]];
+ else if(kind==='claw')paths=[[[-.62,.78],[-.28,.12],[0,-.92]],[[0,.76],[.18,.08],[.42,-1.02]],[[.48,.68],[.60,.08],[.94,-.72]]];
+ else if(kind==='hand')paths=[[[-.58,.72],[-.42,.10],[-.50,-.52]],[[-.30,.14],[-.22,-.96]],[[-.08,.12],[.02,-1.08]],[[.14,.14],[.32,-.92]],[[.34,.22],[.64,-.68]],[[-.58,.72],[-.10,.88],[.44,.62]]];
+ else if(kind==='hook')paths=[[[-.56,-.64],[-.22,-.98],[.28,-.88],[.60,-.46],[.60,.12],[.34,.62],[.02,.86],[-.38,.64],[-.60,.14],[-.56,-.64]],[[-.36,-.18],[-.10,-.34]],[[.10,-.34],[.38,-.16]],[[-.18,.30],[.08,.43],[.28,.27]]];
+ else if(kind==='hook')paths=[[[-1,0],[-.48,-.32],[0,-.40],[.50,-.30],[1,0],[.48,.30],[0,.40],[-.48,.30],[-1,0]],[[0,-.18],[.16,0],[0,.18],[-.16,0],[0,-.18]]];
+ else if(kind==='hook')paths=[[[0,-1],[-.24,-.60],[-.18,.02],[-.44,.88]],[[0,-.56],[.36,-.12],[.72,.10]],[[0,-.52],[-.38,-.12],[-.72,.14]],[[0,.02],[.30,.88]]];
+ else if(kind==='__disabled_bladeCluster')paths=[[[-1.30,.20],[-.20,-.05],[1.42,-.22]],[[-1.10,.48],[-.08,.12],[1.25,-.52]],[[-.92,.68],[.05,.20],[1.05,-.72]]];
+ else if(kind==='hook')paths=[[[-1.48,.12],[-.42,.02],[.52,0],[1.42,-.10]],[[.72,-.02],[1.12,-.48],[1.42,-.10]]];
+ else paths=[[[-1.40,0],[-.50,-.02],[.40,.02],[1.42,0]],[[-.72,0],[-.58,-.26]],[[.12,.02],[.26,.28]],[[.72,0],[.86,-.26]]];
+ let all=[];
+ for(let p of paths){let pts=p.map(q=>T(q[0],q[1]));all.push(...pts);drawSealStroke(pts,R(.75,3.0))}
+ if(all.length){
+   let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=S*.045,bx=clamp(Math.min(...xs)-pad,0,W),by=clamp(Math.min(...ys)-pad,0,H),
+       bw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,50,W-bx),bh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,50,H-by);
+ }
+}
+
+function gongoraSpermatozoid(){if(spermCount>=spermTargetThisWork)return;spermCount++;
+ let sealSize=R(.72,1.45),sealWeight=R(.85,1.65);
+ let S=Math.min(W,H),cc=findSealCenter(135),cx=cc[0],cy=cc[1],ang=R(-Math.PI,Math.PI);
+ let dx=Math.cos(ang),dy=Math.sin(ang),nx=-dy,ny=dx;
+ // Sello orgánico como la referencia: cabeza de materia irregular + cola larga viva, nunca icono ni línea gráfica.
+ let headL=R(S*.025,S*.052)*sealSize,headW=headL*R(.38,.58)*sealWeight;
+ let tailL=R(S*.14,S*.34)*sealSize,v=sealGrayValue();
+ // Cabeza rellena, asimétrica y ligeramente deformada.
+ let hc=[cx-dx*headL*.10,cy-dy*headL*.10],outline=[],N=26,phase=R(0,Math.PI*2);
+ for(let i=0;i<N;i++){
+   let a=Math.PI*2*i/N,rr=1+Math.sin(a*3+phase)*R(.035,.10)+R(-.045,.045);
+   let ex=Math.cos(a)*headL*.48*rr,ey=Math.sin(a)*headW*.50*rr;
+   outline.push([hc[0]+dx*ex+nx*ey,hc[1]+dy*ex+ny*ey]);
+ }
+ g.save();g.globalAlpha=1;g.fillStyle=`rgb(${v},${v},${v})`;g.beginPath();g.moveTo(...outline[0]);
+ for(let i=1;i<=N;i++){let p=outline[(i-1)%N],q=outline[i%N],mx=(p[0]+q[0])*.5,my=(p[1]+q[1])*.5;g.quadraticCurveTo(p[0],p[1],mx,my)}g.closePath();g.fill();g.restore();
+ // Cola: nace gruesa dentro de la cabeza y se afina lentamente hasta una punta orgánica.
+ let root=[hc[0]-dx*headL*.36,hc[1]-dy*headL*.36],steps=72,pts=[root],x=root[0],y=root[1],a=ang+Math.PI+R(-.18,.18),turn=(Math.random()<.5?-1:1)*R(.003,.012),wave=R(.004,.016),freq=R(.65,1.35);
+ for(let i=1;i<=steps;i++){let t=i/steps,st=tailL/steps*R(.88,1.12);a+=turn*Math.sin(t*Math.PI)+Math.sin(t*Math.PI*freq+phase)*wave+R(-.006,.006);x+=Math.cos(a)*st;y+=Math.sin(a)*st;pts.push([x,y]);}
+ for(let i=1;i<pts.length;i++){let t=i/(pts.length-1),p0=pts[i-1],p1=pts[i],w=Math.max(.10,headW*.24*Math.pow(1-t,1.55));let tone=sealGradientTone(v,t);g.save();g.strokeStyle=`rgb(${tone},${tone},${tone})`;g.lineCap='round';g.lineJoin='round';g.lineWidth=w;g.beginPath();g.moveTo(...p0);g.lineTo(...p1);g.stroke();g.restore();}
+ let all=outline.concat(pts),bb=sealBoundsFromPoints(all,Math.max(14,headW*1.8));if(bb)liquifySeal13(bb.x,bb.y,bb.w,bb.h);
+ let rb2=sealBoundsFromPoints(all,Math.max(18,headW*2.2));if(rb2)registerFinalSealRegion(rb2.x,rb2.y,rb2.w,rb2.h);
+}
+function drawSpermatozoids(){
+ if(!spermThisWork)return;
+ while(spermCount<spermTargetThisWork)gongoraSpermatozoid();
+}
+
+function drawPersonalFinalSeals(){
+ if(personalSealsDone)return;personalSealsDone=true;
+ if(!personalSealWork)return;
+ // Siempre hay firma. Cerca con púas es la más frecuente; espermatozoide la segunda.
+ // Daga y cruz son excepcionales: cada una solo tiene 15% de probabilidad por obra.
+ let chosen=[];
+ // Sellos principales: cerca con púas y espermatozoide tienen cada uno 40% de presencia por obra.
+ if(Math.random()<.40)chosen.push('fence');
+ if(Math.random()<.40)chosen.push('sperm');
+ if(Math.random()<.15)chosen.push('dagger');
+ if(Math.random()<.15)chosen.push('cross');
+ // Nunca se pierde la firma: si ninguno fue seleccionado, entra uno de los dos sellos principales.
+ if(!chosen.length)chosen.push(Math.random()<.5?'fence':'sperm');
+ // Si la obra pide más sellos, completar sin cambiar el carácter orgánico ni exceder tres.
+ while(chosen.length<personalSealCount && chosen.length<3){
+   let k=Math.random()<.5?'fence':'sperm';
+   if(!chosen.includes(k))chosen.push(k);else break;
+ }
+ chosen=chosen.slice(0,3);
+ for(let kind of chosen){
+   if(kind==='cross'){crossThisWork=true;gongoraCrossSeal();}
+   else if(kind==='sperm'){spermTargetThisWork=Math.max(spermTargetThisWork,spermCount+1);gongoraSpermatozoid();}
+   else if(kind==='fence'){gongoraDoubleBarbedSeal();}
+   else if(kind==='dagger'){gongoraCreativeCrossDagger();}
+ }
+}
+
+function chooseTopSignatures(){
+ let principal=['crossSeal','spermSeal'];
+ let others=['claw','hand'];
+ let n=Math.random()<.58?1:2,chosen=[];
+ chosen.push(Math.random()<.95?pick(principal):pick(others));
+ while(chosen.length<n){let k=pick(principal.concat(others));if(!chosen.includes(k))chosen.push(k)}
+ topSealKinds=chosen;
+}
+function drawTopSignatures(){
+ if(!topSealKinds.length)chooseTopSignatures();
+ for(let kind of topSealKinds){
+   if(kind==='barbedFence')visibleSignatureMotif('crossSpear');
+   else if(kind==='crossSeal')gongoraCrossSeal();
+   else if(kind==='spermSeal')gongoraSpermatozoid();
+   else visibleSignatureMotif(kind);
+ }
+}
+
+function gongoraDoubleBarbedSeal(){
+ let sealSize=R(.72,1.38),sealWeight=R(.50,1.55); // aproximadamente la mitad de grueso, con variación orgánica
+ let allFencePts=[],S=Math.min(W,H),strands=R(1,4)|0,a=R(-Math.PI,Math.PI),diag=Math.hypot(W,H),cx=W*.5,cy=H*.5,L=diag*R(1.02,1.16)*sealSize,dx=Math.cos(a),dy=Math.sin(a),nx=-dy,ny=dx; // 1–3 cercas; pueden cruzar el lienzo completo
+ let wavy=true;
+ function seg(p0,p1,w){let base=sealGrayValue(),tt=clamp((p0[0]/Math.max(1,W)+p0[1]/Math.max(1,H))*.5,0,1),v=sealGradientTone(base,tt);g.save();g.lineCap='round';g.lineJoin='round';g.strokeStyle=`rgba(${v},${v},${v},.97)`;g.lineWidth=Math.max(.09,w);g.beginPath();g.moveTo(...p0);g.lineTo(...p1);g.stroke();g.restore()}
+ for(let row=0;row<strands;row++){
+   let sep=(row-(strands-1)/2)*R(S*.05,S*.14),x1=cx-dx*L*.5+nx*sep,y1=cy-dy*L*.5+ny*sep,x2=cx+dx*L*.5+nx*sep,y2=cy+dy*L*.5+ny*sep,steps=160,pts=[];
+   let bend=R(-S*.045,S*.045),phase=R(-1,1),waveAmp=R(S*.018,S*.050),waveFreq=R(.72,1.42);
+   for(let i=0;i<=steps;i++){let t=i/steps,e=Math.sin(Math.PI*t),off=bend*e+Math.sin(t*Math.PI*waveFreq+phase)*waveAmp*e;pts.push([x1+(x2-x1)*t+nx*off,y1+(y2-y1)*t+ny*off])}
+   let sealThick=R(1.0,1.35)*sealWeight,thickStart=R(3.0,5.2)*sealThick,thickEnd=R(.9,2.3)*sealThick;
+   for(let i=1;i<pts.length;i++){let t=i/steps,edgeTaper=Math.min(1,(1-t)/.035),organic=.84+.16*Math.sin(t*Math.PI*R(2.0,4.0)+phase)+R(-.045,.045);let w=(thickStart*(1-t)+thickEnd*t)*organic*edgeTaper;seg(pts[i-1],pts[i],Math.max(.10,w))}
+   let knots=R(5,10)|0;
+   for(let k=0;k<knots;k++){let t=R(.06,.94),ii=clamp(Math.round(t*steps),2,steps-2),p=pts[ii],sg=Math.random()<.5?-1:1,rr=R(S*.003,S*.009),turns=R(3,6)|0,last=p;
+     for(let j=1;j<=turns;j++){let aa=j*Math.PI*R(.75,1.15)*sg,q=[p[0]+Math.cos(aa)*rr*R(.5,1.25),p[1]+Math.sin(aa)*rr*R(.5,1.25)];seg(last,q,R(.7,1.8)*sealWeight);last=q}
+     let arms=Math.random()<.55?2:1;
+     for(let z=0;z<arms;z++){let side=(z?-sg:sg),bl=R(S*.012,S*.043),lean=R(-.32,.32),q=[p[0]+nx*bl*side+dx*bl*lean,p[1]+ny*bl*side+dy*bl*lean],parts=12;for(let j=1;j<=parts;j++){let u=j/parts,p0=[p[0]+(q[0]-p[0])*(j-1)/parts,p[1]+(q[1]-p[1])*(j-1)/parts],p1=[p[0]+(q[0]-p[0])*u,p[1]+(q[1]-p[1])*u];seg(p0,p1,Math.max(.06,R(1.0,2.25)*sealWeight*Math.pow(1-u,1.9)))}}
+   }
+ }
+
+ let pad=S*.05;
+ liquifySeal13(Math.max(0,cx-L*.55-pad),Math.max(0,cy-L*.55-pad),
+               Math.min(W,cx+L*.55+pad)-Math.max(0,cx-L*.55-pad),
+               Math.min(H,cy+L*.55+pad)-Math.max(0,cy-L*.55-pad));
+
+ let rp=S*.06,rx=Math.max(0,cx-L*.60-rp),ry=Math.max(0,cy-L*.60-rp);
+ registerFinalSealRegion(rx,ry,Math.min(W-rx,L*1.20+rp*2),Math.min(H-ry,L*1.20+rp*2));
+}
+
+function gongoraCrossSeal(){if(!crossThisWork)return;
+ let sealSize=R(.72,1.42),sealWeight=R(.50,1.55); // sello más fino y orgánico
+ let S=Math.min(W,H),cx=R(W*.20,W*.80),cy=R(H*.20,H*.80),sc=R(S*.27,S*.46)*sealSize,rot=R(-Math.PI,Math.PI),v=sealGrayValue();
+ const T=(x,y)=>[cx+(Math.cos(rot)*x-Math.sin(rot)*y)*sc,cy+(Math.sin(rot)*x+Math.cos(rot)*y)*sc];
+ function arm(x0,y0,x1,y1,base){let n=58,pts=[],bend=R(-.045,.045),phase=R(-1,1);for(let i=0;i<=n;i++){let t=i/n,e=Math.sin(Math.PI*t),jitter=Math.sin(t*Math.PI*R(.8,1.35)+phase)*R(.002,.010)*e;let px=x0+(x1-x0)*t-(y1-y0)*(bend*e+jitter),py=y0+(y1-y0)*t+(x1-x0)*(bend*e+jitter);pts.push(T(px,py))}for(let i=1;i<pts.length;i++){let t=i/n,tip=Math.min(1,t/.09,(1-t)/.09),w=Math.max(.08,base*tip*(.72+.25*Math.sin(t*Math.PI*R(1.6,3.1)+phase)+R(-.05,.05))),p0=pts[i-1],p1=pts[i];g.save();g.lineCap='round';let vv=sealGradientTone(v,t);g.strokeStyle=`rgba(${vv},${vv},${vv},.96)`;g.lineWidth=w;g.beginPath();g.moveTo(...p0);g.lineTo(...p1);g.stroke();g.restore()}}
+ arm(0,-1.25,0,1.25,R(2.5,6.2)*sealWeight);arm(R(-.86,-.68),R(-.34,-.20),R(.68,.90),R(-.32,-.18),R(2.2,5.8)*sealWeight);
+ // La cruz es materia orgánica, nunca un plano gráfico: retoque Liquify individual al final.
+ let pad=sc*.22;registerFinalSealRegion(clamp(cx-sc*1.15-pad,0,W),clamp(cy-sc*1.45-pad,0,H),clamp(sc*2.30+pad*2,20,W-clamp(cx-sc*1.15-pad,0,W)),clamp(sc*2.90+pad*2,20,H-clamp(cy-sc*1.45-pad,0,H)));
+}
+
+function gongoraCreativeCrossDagger(){
+ // INVARIANTE DE ESTILO: nunca líneas eléctricas/zigzag/rayos; solo curvas orgánicas, continuas y fundidas.
+ let sealSize=R(.72,1.42),sealWeight=R(.50,1.55); // sello más fino y orgánico
+ let S=Math.min(W,H),D=Math.hypot(W,H),side=R(0,4)|0,sx,sy;
+ if(side===0){sx=R(W*.12,W*.88);sy=-S*.02}
+ else if(side===1){sx=W+S*.02;sy=R(H*.12,H*.88)}
+ else if(side===2){sx=R(W*.12,W*.88);sy=H+S*.02}
+ else {sx=-S*.02;sy=R(H*.12,H*.88)}
+ let tx=R(W*.28,W*.72),ty=R(H*.24,H*.76),ang=Math.atan2(ty-sy,tx-sx);
+ let L=R(D*.34,D*.58)*sealSize,dx=Math.cos(ang),dy=Math.sin(ang),nx=-dy,ny=dx;
+ let N=86,pts=[],bend=R(-S*.018,S*.018),dark=sealGrayValue();
+ for(let i=0;i<=N;i++){let t=i/N,off=bend*4*t*(1-t);pts.push([sx+dx*L*t+nx*off,sy+dy*L*t+ny*off])}
+ function tone(x,y,t=.5){return sealGradientTone(dark,t)}
+ function strokePath(arr,w0,w1){
+   for(let i=1;i<arr.length;i++){let t=i/(arr.length-1),w=w0+(w1-w0)*t,p0=arr[i-1],p1=arr[i],v=tone((p0[0]+p1[0])*.5,(p0[1]+p1[1])*.5,t);
+     g.save();g.globalAlpha=1;g.filter='none';g.strokeStyle=`rgb(${v},${v},${v})`;g.lineCap='round';g.lineJoin='round';g.lineWidth=Math.max(.35,w);
+     g.beginPath();g.moveTo(...p0);g.lineTo(...p1);g.stroke();g.restore();}
+ }
+ // Cuerpo largo como pincelada/cuchilla de tinta: masa estrecha que termina en aguja.
+ strokePath(pts,S*R(.010,.019)*sealWeight,.35*sealWeight);
+ // Regla fija: la daga no lleva ecos, zigzags ni líneas paralelas que puedan parecer eléctricas.
+ // La materia pictórica queda en el cuerpo orgánico y su degradé continuo.
+ // Cruceta: pincelada transversal larga, irregular y ligeramente curva como la referencia.
+ let ci=Math.round(R(.18,.34)*N),c=pts[ci],ga=ang+Math.PI/2+R(-.045,.045),gx=Math.cos(ga),gy=Math.sin(ga),gnx=-gy,gny=gx;
+ let left=R(S*.10,S*.22),right=R(S*.13,S*.27),GN=58,guard=[],allGuards=[],crossBars=R(1,3)|0;
+ for(let b=0;b<crossBars;b++){
+   let shift=(b-(crossBars-1)/2)*R(S*.035,S*.070),cc=[c[0]+dx*shift,c[1]+dy*shift],curve=R(-S*.010,S*.010),one=[];
+   for(let j=0;j<=GN;j++){let u=j/GN,d=-left+(left+right)*u,off=curve*4*u*(1-u);one.push([cc[0]+gx*d+gnx*off,cc[1]+gy*d+gny*off])}
+   strokePath(one,S*R(.006,.013)*sealWeight,S*R(.002,.005)*sealWeight);allGuards.push(...one);if(b===0)guard=one;
+ }
+ // Regla fija: sin huellas paralelas, rayos, zigzags ni adornos eléctricos alrededor de la daga.
+ // Daga: conserva su gesto, con 1 o 2 travesaños y retoque orgánico ligero, nunca símbolo vectorial.
+ let allD=pts.concat(allGuards),xsD=allD.map(p=>p[0]),ysD=allD.map(p=>p[1]),padD=S*.035;
+ let bxD=clamp(Math.min(...xsD)-padD,0,W),byD=clamp(Math.min(...ysD)-padD,0,H);
+ registerFinalSealRegion(bxD,byD,clamp(Math.max(...xsD)-Math.min(...xsD)+padD*2,20,W-bxD),clamp(Math.max(...ysD)-Math.min(...ysD)+padD*2,20,H-byD));
+}
+function whiteAreaSeal(){
+ let best=null;
+ for(let k=0;k<80;k++){
+   let x=R(W*.06,W*.94),y=R(H*.06,H*.94),d=g.getImageData(x|0,y|0,1,1).data,lum=(d[0]+d[1]+d[2])/3;
+   if(lum>238){best={x,y};break}
+ }
+ if(!best){visibleSignatureMotif(pick(['claw','hand']));return}
+ // Compact organic mark centered in a white opening; generated, never pasted.
+ let S=Math.min(W,H),kind=pick(['hook','pod']),pts=[],a=R(-Math.PI,Math.PI),L=R(S*.06,S*.18);
+ if(kind==='hook'){
+   for(let i=0;i<=36;i++){let t=i/36,aa=a+t*R(.8,1.55);pts.push([best.x+Math.cos(aa)*L*t,best.y+Math.sin(aa)*L*t])}
+   drawSealStroke(pts,R(.8,2.4),R(8,45)|0);
+ }else if(kind==='pod'){
+   for(let i=0;i<=40;i++){let t=i/40,xx=(t-.5)*L,yy=Math.sin(t*Math.PI)*R(S*.008,S*.020);pts.push([best.x+Math.cos(a)*xx-Math.sin(a)*yy,best.y+Math.sin(a)*xx+Math.cos(a)*yy])}
+   drawSealStroke(pts,R(.9,2.6),R(8,45)|0);
+ }else{
+   let dx=Math.cos(a),dy=Math.sin(a),nx=-dy,ny=dx;
+   drawSealStroke([[best.x-dx*L*.5,best.y-dy*L*.5],[best.x+dx*L*.5,best.y+dy*L*.5]],R(.8,2.3),R(8,45)|0);
+   let q=R(.035,.075)*S;drawSealStroke([[best.x-nx*q,best.y-ny*q],[best.x+nx*q,best.y+ny*q]],R(.7,2.1),R(8,45)|0);
+ }
+}
+
+function liquifySeal13(x,y,w,h){
+ // Sin Liquify al cierre/final de la obra. Los Liquify durante la creación permanecen intactos.
+ return;
+}
+
+function sealBoundsFromPoints(pts,pad=18){
+ if(!pts||!pts.length)return null;
+ let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+ let x=Math.max(0,Math.min(...xs)-pad),y=Math.max(0,Math.min(...ys)-pad);
+ let x2=Math.min(W,Math.max(...xs)+pad),y2=Math.min(H,Math.max(...ys)+pad);
+ return {x,y,w:x2-x,h:y2-y};
+}
+
+let allowHugeCentralMass=false;
+let spermCount=0;
+let finalSealLiquifyRegions=[];
+let finalLiquifyPhase=false,finalLiquifyStart=0,finalLiquifyDuration=500;
+
+function registerFinalSealRegion(x,y,w,h){
+ // Cada elemento final recibe un toque orgánico individual, ligero, nunca mecánico.
+ if(w>2&&h>2)finalSealLiquifyRegions.push({x:clamp(x,0,W),y:clamp(y,0,H),w:clamp(w,2,W-clamp(x,0,W)),h:clamp(h,2,H-clamp(y,0,H))});
+}
+function runFinalSealLiquify13(){return; /* sin Liquify de cierre */}
+function animateFinalLiquify(now){finalLiquifyPhase=false;return false; /* sin fase Liquify al terminar */}
+function finalVisibleSignatures(){
+ if(fenceThisWork&&!fenceDrawn){fenceDrawn=true;while(fenceCount<fenceTargetThisWork){gongoraDoubleBarbedSeal();fenceCount++;}}
+ /* dagger handled by the 1–3 dagger final event */
+
+ // Prioridad real a los sellos principales: daga y cerca cuando fueron seleccionadas.
+ if(fenceThisWork&&!fenceDrawn){fenceDrawn=true;while(fenceCount<fenceTargetThisWork){gongoraDoubleBarbedSeal();fenceCount++;}}
+ /* dagger handled by the 1–3 dagger final event */
+
+ if(fenceThisWork&&!fenceDrawn){
+   fenceDrawn=true;
+   gongoraDoubleBarbedSeal();
+ }
+
+ let kinds=['claw','hand'];
+ for(let i=kinds.length-1;i>0;i--){let j=(Math.random()*(i+1))|0,t=kinds[i];kinds[i]=kinds[j];kinds[j]=t}
+ let n=Math.random()<.62?1:2;
+ for(let i=0;i<n;i++)visibleSignatureMotif(kinds[i]);
+}
+function finalExactSeal(){
+ let S=Math.min(W,H),cx=R(W*.18,W*.82),cy=R(H*.18,H*.82),rot=R(-Math.PI,Math.PI);
+ let L=R(S*.28,S*.70),w=R(.55,2.4),v=R(25,64)|0;
+ let x1=cx-Math.cos(rot)*L*.5,y1=cy-Math.sin(rot)*L*.5;
+ let x2=cx+Math.cos(rot)*L*.5,y2=cy+Math.sin(rot)*L*.5;
+ let nx=-Math.sin(rot),ny=Math.cos(rot),bend=R(-S*.025,S*.025),pts=[],steps=52;
+ for(let i=0;i<=steps;i++){
+   let t=i/steps,e=Math.sin(Math.PI*t);
+   pts.push([x1+(x2-x1)*t+nx*bend*e,y1+(y2-y1)*t+ny*bend*e]);
+ }
+ g.save();g.strokeStyle=`rgba(${v},${v},${v},${R(.82,.96)})`;g.lineWidth=w;g.lineCap='round';g.lineJoin='round';
+ g.beginPath();g.moveTo(pts[0][0],pts[0][1]);
+ for(let i=1;i<pts.length-1;i++){let p=pts[i],q=pts[i+1];g.quadraticCurveTo(p[0],p[1],(p[0]+q[0])*.5,(p[1]+q[1])*.5)}
+ g.lineTo(pts[pts.length-1][0],pts[pts.length-1][1]);g.stroke();
+ // pequeñas espinas limpias, nunca puntos.
+ let barbs=R(2,6)|0;
+ for(let k=0;k<barbs;k++){
+   let t=R(.16,.84),i=Math.max(1,Math.min(steps-1,Math.round(t*steps))),p=pts[i];
+   let bl=R(S*.012,S*.045),sg=Math.random()<.5?-1:1;
+   g.lineWidth=R(.45,1.35);g.beginPath();g.moveTo(p[0],p[1]);
+   g.lineTo(p[0]+nx*bl*sg+Math.cos(rot)*bl*.22,p[1]+ny*bl*sg+Math.sin(rot)*bl*.22);g.stroke();
+ }
+ g.restore();
+ let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pad=S*.055;
+ let bx=clamp(Math.min(...xs)-pad,0,W),by=clamp(Math.min(...ys)-pad,0,H),
+     bw=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,50,W-bx),
+     bh=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,50,H-by);
+ // Distorsión pedida: 13% exacto.
+ liquifyRegion(bx,by,bw,bh,.13);
+}
+function lightestCorner(ctx=g,scaleX=1,scaleY=1){
+ let boxes=[[0,0,W*.24,H*.20],[W*.76,0,W*.24,H*.20],[0,H*.80,W*.24,H*.20],[W*.76,H*.80,W*.24,H*.20]],best=boxes[3],score=-1;
+ try{for(let b of boxes){let im=ctx.getImageData(Math.max(0,b[0]*scaleX|0),Math.max(0,b[1]*scaleY|0),Math.max(2,b[2]*scaleX|0),Math.max(2,b[3]*scaleY|0)).data,sum=0,n=0;for(let i=0;i<im.length;i+=64){sum+=(im[i]+im[i+1]+im[i+2])/3;n++}let q=sum/Math.max(1,n);if(q>score){score=q;best=b}}}catch(e){}
+ return best;
+}
+function signGongora(ctx,scaleX=1,scaleY=1){
+ let b=lightestCorner(ctx,scaleX,scaleY),S=Math.min(W,H),h=S*R(.018,.020),w=h*4.4,pad=S*.0234;
+ let x=b[0]+(b[0]===0?pad:b[2]-w-pad),y=b[1]+b[3]-pad-h*.25;
+ ctx.save();ctx.translate(x*scaleX,y*scaleY);ctx.scale(scaleX,scaleY);ctx.rotate(R(-.045,.035));ctx.strokeStyle=`rgba(72,72,72,${R(.30,.50)})`;ctx.lineWidth=Math.max(.45,h*.055);ctx.lineCap='round';ctx.lineJoin='round';
+ // Firma gestual “Góngora”, dibujada como línea fina y con pequeñas variaciones naturales.
+ ctx.beginPath();ctx.moveTo(w*.08,h*.62);ctx.bezierCurveTo(w*.00,h*.10,w*.24,-h*.02,w*.25,h*.43);ctx.bezierCurveTo(w*.25,h*.82,w*.04,h*.94,w*.06,h*.49);ctx.bezierCurveTo(w*.08,h*.30,w*.20,h*.30,w*.23,h*.48);
+ ctx.bezierCurveTo(w*.30,h*.28,w*.34,h*.38,w*.31,h*.59);ctx.bezierCurveTo(w*.29,h*.78,w*.39,h*.72,w*.38,h*.48);ctx.bezierCurveTo(w*.37,h*.27,w*.47,h*.31,w*.45,h*.56);ctx.bezierCurveTo(w*.43,h*.77,w*.52,h*.72,w*.51,h*.47);ctx.bezierCurveTo(w*.50,h*.26,w*.60,h*.31,w*.58,h*.58);ctx.bezierCurveTo(w*.57,h*.76,w*.66,h*.70,w*.65,h*.46);ctx.bezierCurveTo(w*.64,h*.26,w*.74,h*.31,w*.72,h*.57);ctx.bezierCurveTo(w*.71,h*.76,w*.80,h*.69,w*.79,h*.46);ctx.bezierCurveTo(w*.78,h*.28,w*.88,h*.30,w*.86,h*.56);ctx.bezierCurveTo(w*.85,h*.75,w*.95,h*.68,w*.94,h*.43);ctx.stroke();ctx.restore();
+}
+function filename(){return `INFINITO_${String(workNo).padStart(5,'0')}.jpg`}
+let saveDir=null;
+async function chooseSaveFolder(){if(!window.showDirectoryPicker)return false;try{saveDir=await window.showDirectoryPicker({mode:'readwrite'});return true}catch(e){return false}}
+function setJpeg300DPI(blob){return blob.arrayBuffer().then(buf=>{let u=new Uint8Array(buf);for(let i=2;i<u.length-16;i++){if(u[i]===0xFF&&u[i+1]===0xE0&&u[i+4]===0x4A&&u[i+5]===0x46&&u[i+6]===0x49&&u[i+7]===0x46&&u[i+8]===0x00){u[i+11]=1;u[i+12]=0x01;u[i+13]=0x2C;u[i+14]=0x01;u[i+15]=0x2C;break}}return new Blob([u],{type:'image/jpeg'})})}
+function makeHQBlob(){return new Promise(resolve=>{let out=document.createElement('canvas'),targetW=4800,ratio=H/W;out.width=targetW;out.height=Math.round(targetW*ratio);let og=out.getContext('2d');og.fillStyle='#fff';og.fillRect(0,0,out.width,out.height);og.imageSmoothingEnabled=true;og.imageSmoothingQuality='high';og.drawImage(c,0,0,out.width,out.height);out.toBlob(async b=>resolve(b?await setJpeg300DPI(b):null),'image/jpeg',.98)})}
+async function downloadShotHQ(){let blob=await makeHQBlob();if(!blob)return;if(saveDir){try{let fh=await saveDir.getFileHandle(filename(),{create:true});let w=await fh.createWritable();await w.write(blob);await w.close();return}catch(e){}}try{let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}catch(e){}}
+async function downloadShot(){await downloadShotHQ()}
+function organicPickaxeSurprise(){
+ // Pico/martillo de roca: sorpresa grande, siempre entra desde ARRIBA hacia abajo; nunca desde abajo.
+ let S=Math.min(W,H),cx=R(W*.22,W*.78),top=-S*.10,shaftLen=R(H*.38,H*.62),sc=R(S*.20,S*.25),rot=R(-.18,.18),v=R(0,10)|0;
+ let allHairPts=[];let shaft=[];for(let i=0;i<=52;i++){let t=i/52,x=cx+Math.sin(t*Math.PI*R(.7,1.3))*S*R(.006,.018),y=top+shaftLen*t;shaft.push([x,y])}
+ organicClawStroke(shaft,R(S*.020,S*.040),`rgb(${v},${v},${v})`,.035,.10);allHairPts.push(...shaft);
+ let c=shaft[Math.round(52*R(.18,.30))],bar=[],a=rot,dx=Math.cos(a),dy=Math.sin(a),L=sc*R(1.5,2.2);
+ for(let i=0;i<=64;i++){let t=i/64,d=(t-.5)*L,x=c[0]+dx*d,y=c[1]+dy*d+Math.sin(t*Math.PI)*R(-S*.012,S*.012);bar.push([x,y])}
+ organicClawStroke(bar,R(S*.028,S*.055),`rgb(${v},${v},${v})`,.035,.10);allHairPts.push(...bar);
+ // un extremo se afila como pico de romper roca
+ let e=bar[bar.length-1],tip=[];for(let i=0;i<=24;i++){let t=i/24;tip.push([e[0]+dx*sc*.55*t,e[1]+dy*sc*.55*t+Math.sin(t*Math.PI)*S*.006])}
+ organicClawStroke(tip,R(S*.025,S*.045),`rgb(${v},${v},${v})`,.03,.10);allHairPts.push(...tip);
+ organicHairOnBlackPoints(allHairPts,Math.round(R(14,26)),R(.85,1.15));
+}
+function earlyRootCrossCluster(){
+ // Antigua sorpresa de líneas gruesas: varios gestos juntos, raíz/cruz/garra; solo durante los primeros 13–14 s.
+ let S=Math.min(W,H),cx=R(W*.12,W*.88),cy=R(H*.12,H*.72),n=R(3,7)|0,v=R(0,10)|0,all=[];
+ for(let k=0;k<n;k++){let a=R(-Math.PI,Math.PI),L=R(S*.22,S*.62),steps=R(22,46)|0,x=cx+R(-S*.05,S*.05),y=cy+R(-S*.05,S*.05),pts=[[x,y]];
+  for(let i=1;i<=steps;i++){let t=i/steps;a+=Math.sin(t*Math.PI*R(.8,2.0)+k)*R(-.035,.035)+R(-.028,.028);x+=Math.cos(a)*L/steps;y+=Math.sin(a)*L/steps;pts.push([x,y]);all.push([x,y])}
+  organicClawStroke(pts,R(S*.018,S*.055),`rgb(${v},${v},${v})`,.03,.10);
+ }
+ if(all.length){let xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),pad=S*.04,m={x:clamp(Math.min(...xs)-pad,0,W),y:clamp(Math.min(...ys)-pad,0,H),w:0,h:0};m.w=clamp(Math.max(...xs)-Math.min(...xs)+pad*2,30,W-m.x);m.h=clamp(Math.max(...ys)-Math.min(...ys)+pad*2,30,H-m.y);massAreas.push(m);organicHairOnBlackPoints(all,Math.round(R(18,34)),R(.90,1.35));}
+}
+function cornerSpineSeal(){
+ // Sello final ocasional: 1, 2 o 3 espinas/clavos nacen SIEMPRE de una esquina y penetran el lienzo.
+ let S=Math.min(W,H),count=R(1,4)|0,corners=[[0,0],[W,0],[0,H],[W,H]],used=[];
+ for(let i=0;i<count;i++){
+   let c=pick(corners),guard=0;while(used.includes(c)&&guard++<8)c=pick(corners);used.push(c);
+   let x=c[0],y=c[1],towardX=c[0]===0?1:-1,towardY=c[1]===0?1:-1;
+   let ang=Math.atan2(towardY*R(.30,.92),towardX*R(.45,1.0))+R(-.16,.16);
+   let L=R(Math.min(W,H)*.18,Math.max(W,H)*.62),w0=R(S*.018,S*.070),steps=R(28,58)|0,pts=[[x,y]],px=x,py=y,phase=R(0,Math.PI*2);
+   for(let j=1;j<=steps;j++){let t=j/steps,st=L/steps*R(.86,1.14);ang+=Math.sin(t*Math.PI*R(.8,1.8)+phase)*R(-.012,.012)+R(-.010,.010);px+=Math.cos(ang)*st;py+=Math.sin(ang)*st;pts.push([px,py]);}
+   organicClawStroke(pts,w0,`rgb(${R(0,18)|0},${R(0,18)|0},${R(0,18)|0})`,.025,.08);
+   // Un poco de pelo vivo funde la espina con la pintura; nunca queda como vector limpio.
+   organicHairOnBlackPoints(pts,Math.round(R(5,12)),R(.65,1.05));
+ }
+}
+
+function beginWork(){mysticCultureShareThisWork=R(.30,.40);mysticSymbolGuaranteedDone=false;cornerSpineWork=Math.random()<R(.07,.08);cornerSpineDone=false;pickaxeSurpriseWork=Math.random()<R(.03,.05);pickaxeSurpriseDone=false;earlyRootClusterWork=Math.random()<.25;earlyRootClusterDone=false;earlyRootClusterAt=R(1800,12000);suppressHumanoidsThisWork=Math.random()<R(.05,.15);neuralCircuitWork=Math.random()<.50;giantHumanoidThisWork=!suppressHumanoidsThisWork&&Math.random()<.05;giantHumanoidDrawn=false;whiteFormTarget=R(5,8)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(1,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;denseBlackHairWork=true;denseBlackHairDone=false;denseBlackHairFinalDone=false;pointedBlackMasses=new WeakSet();extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealWork=true;personalSealCount=R(1,4)|0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];{let rp=Math.random();if(rp<.18){tempo=R(1.7,2.8);thinkingPace=R(.22,.34);liquifyRhythm='slow';}else if(rp<.48){tempo=R(3.0,4.8);thinkingPace=R(.34,.50);liquifyRhythm='medium';}else if(rp<.80){tempo=R(5.0,7.4);thinkingPace=R(.50,.72);liquifyRhythm='fast';}else{tempo=R(7.8,11.5);thinkingPace=R(.72,.96);liquifyRhythm='veryFast';}}nextThoughtShift=started+R(1800,6500)*EXECUTION_SLOW;nextTempoShift=started+R(3500,13000)*EXECUTION_SLOW;nextAction=started+R(100,500)*EXECUTION_SLOW;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(1,3)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(45000,60000);let dur=finishAt-started;
+artistPauseTarget=0;pauseMarks=[];queueInitialBase();if(Math.random()<.86||suppressHumanoidsThisWork)openingBlackHumanoids();if(neuralCircuitWork){let neuralBurst=R(3,7)|0;for(let nc=0;nc<neuralBurst;nc++)organicNeuralCircuitForm();}if(giantHumanoidThisWork&&!giantHumanoidDrawn){giantHumanoidDrawn=true;let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.22,W*.78),R(H*.25,H*.75),R(S*.45,S*.70),R(-.75,.75),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}if(dominantLargeWork)if(allowHugeCentralMass)dominantBlackForm();else paintedMass();else if(monolithicPlaneWork)if(allowHugeCentralMass)monolithicBlackPlane();else paintedMass();}
+function compositionMature(now){
+ // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
+ return now>=finishAt;
+}
+function finishWork(now){/* Sin Liquify global al cierre. Si el evento de firma no alcanzó a ejecutarse por tiempo, se resuelve aquí respetando exactamente el 80%. */if(phase!=='paint')return;strokeQueue=[];drawPersonalFinalSeals();exactSealDone=true;if(!crossDaggerDone){crossDaggerDone=true;(void 0);}phase='hold';phaseAt=now}
+function tick(now){if(finalLiquifyPhase&&animateFinalLiquify(performance.now()))return;
+ if(paused){requestAnimationFrame(tick);return}
+if(phase==='hold'){if(now-phaseAt>2000)beginWork();requestAnimationFrame(tick);return}let remain=finishAt-now;remainNow=remain;let totalDur=finishAt-started,elapsed=now-started;if(!mysticSymbolGuaranteedDone&&elapsed>totalDur*.18&&elapsed<totalDur*.42){organicMysticCultureSymbol();mysticSymbolGuaranteedDone=true;}
+// Elementos orgánicos claros/oscuros solamente durante la primera mitad; después no se crean nuevos.
+elapsed=now-safeWorkStartedAt;totalDur=Math.max(1,finishAt-safeWorkStartedAt);
+if(pickaxeSurpriseWork&&!pickaxeSurpriseDone&&elapsed>=R(900,6500)&&elapsed<13500){pickaxeSurpriseDone=true;organicPickaxeSurprise();}
+if(earlyRootClusterWork&&!earlyRootClusterDone&&elapsed>=earlyRootClusterAt&&elapsed<13500){earlyRootClusterDone=true;earlyRootCrossCluster();}
+if(elapsed<totalDur*.50&&massAreas.length&&whiteFormCount<whiteFormTarget&&Math.random()<.055){whiteThroughBlack(pick(massAreas),true,false);}
+// Humanoides negros pueden aparecer durante el 75% inicial de la obra.
+if(elapsed<totalDur*.75&&Math.random()<.018){if(suppressHumanoidsThisWork){if(Math.random()<.35)humanoidReplacementForms();}else if(Math.random()<mysticCultureShareThisWork){organicMysticCultureSymbol();}else{let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.10,W*.90),R(H*.15,H*.85),R(S*.07,S*.25),R(-1.15,1.15),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}}
+if(cornerSpineWork&&!cornerSpineDone&&remain<=3200){cornerSpineDone=true;cornerSpineSeal();}
+if(!personalSealsDone&&remain<=2100){
+ strokeQueue=[];drawPersonalFinalSeals();
+}
+if(!crossDaggerDone && remain<=500){
+  crossDaggerDone=true;
+  (void 0);
+}
+
+if(remain<=8500&&remain>4000&&!extraBlackHairDone){extraBlackHairDone=true;extraHairOnBlackForms();}
+if(remain<=7600&&remain>3300&&denseBlackHairWork&&!denseBlackHairDone){ensureDenseHairOnEveryBlackArea35();}
+// Segunda pasada obligatoria: recoge también masas negras creadas más tarde y deja TODAS
+// las áreas negras con la densidad alta de filamentos de la referencia aprobada.
+if(remain<=3000&&remain>2250&&denseBlackHairWork&&!denseBlackHairFinalDone){
+ denseBlackHairFinalDone=true;
+ denseBlackHairDone=false;
+ ensureDenseHairOnEveryBlackArea35();
+}
+
+// El negro se equilibra durante la creación; no se fuerza un porcentaje negro al final.
+
+if(remain<=1600&&!balanceDetailDone)balanceOppositeDetail();
+if(remain<=2200&&!finalDetailsDone){strokeQueue=[];addFinalConceptElements()}
+if(remain<=700&&!exactSealDone){exactSealDone=true;}
+if(now>=nextThoughtShift){
+ let rp=Math.random();
+ if(rp<.18){thinkingPace=R(.22,.34);liquifyRhythm='slow';}
+ else if(rp<.48){thinkingPace=R(.34,.50);liquifyRhythm='medium';}
+ else if(rp<.80){thinkingPace=R(.50,.72);liquifyRhythm='fast';}
+ else{thinkingPace=R(.72,.96);liquifyRhythm='veryFast';}
+ nextThoughtShift=now+(Math.random()<.30?R(4200,8500)*EXECUTION_SLOW:R(1400,4800)*EXECUTION_SLOW);
+}
+if(now>=nextTempoShift){let rp=Math.random();if(rp<.18)tempo=R(1.7,2.8);else if(rp<.48)tempo=R(3.0,4.8);else if(rp<.80)tempo=R(5.0,7.4);else tempo=R(7.8,11.5);nextTempoShift=now+R(1800,8500)*EXECUTION_SLOW}
+paintStrokeFrame(16.7);if(remain>2200&&now>=nextAction&&strokeQueue.length<180){let burst=Math.random()<.82?(R(5,12)|0):R(2,5)|0;while(burst--&&strokeQueue.length<180){gesture();actionsDone++;strokesSinceLiquify++;if(strokesSinceLiquify>=nextLiquifyAt && actionsDone>16 && strokeQueue.length<100){if(Math.random()<.66){sculptMassLiquify();if(Math.random()<.28)sculptMassLiquify();}else{let lp=R(.017,.045);if(Math.random()<.22)lp*=2;liquify(lp);}strokesSinceLiquify=0;nextLiquifyAt=R(1,3)|0}}nextAction=now+((R(4,24)/clamp(tempo,1.2,7.5))/thinkingPace)*EXECUTION_SLOW}if(remain>2200&&actionsDone>minActions*.55&&Math.random()<.018&&profile.connectors>0){connector();profile.connectors--;actionsDone++}if(remain>2200&&actionsDone>minActions*.35&&Math.random()<.007&&profile.planes>0){if(Math.random()<.85){(void 0);}profile.planes--;actionsDone++;if(Math.random()<.82)sculptMassLiquify()}if(compositionMature(now))finishWork(now);requestAnimationFrame(tick)}
+async function infinitoFullScreen(){
+ if(document.fullscreenElement)return;
+ try{await document.documentElement.requestFullscreen()}catch(e){}
+}
+window.addEventListener('pointerdown',async()=>{await infinitoFullScreen()},{once:true});
+document.getElementById('p').onclick=e=>{paused=!paused;e.target.textContent=paused?'CONTINUAR':'PAUSA'};document.getElementById('save').onclick=()=>{};document.getElementById('next').onclick=()=>beginWork();onresize=resize;resize();requestAnimationFrame(tick);
+</script></body></html>
