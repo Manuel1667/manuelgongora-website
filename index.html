@@ -1390,7 +1390,7 @@ select.nav-lang{
 </script>
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"Manuel Góngora","alternateName":"Manuel Gongora","url":"https://manuelgongora.com/","inLanguage":["en","es","fr","it","pt"]}
+{"@context":"https://schema.org","@type":"WebSite","name":"Manuel Góngora","alternateName":"Manuel Gongora","url":"https://manuelgongora.com/","inLanguage":["en","es","fr","it","pt","ht","zh-CN","ko","ja","ar","he","zh-TW","eo","ca","sv","de","ru","cs","sk","bg","uk"]}
 </script>
 <!-- End SEO Metadata -->
 
@@ -1462,6 +1462,22 @@ header{background:#fff!important;}
 <button class="lang-option" data-lang="fr" role="option" type="button">🇫🇷 FR</button>
 <button class="lang-option" data-lang="pt" role="option" type="button">🇧🇷 PT</button>
 <button class="lang-option" data-lang="it" role="option" type="button">🇮🇹 IT</button>
+<button class="lang-option" data-lang="ht" role="option" type="button">🇭🇹 KREYÒL</button>
+<button class="lang-option" data-lang="zh-CN" role="option" type="button">🇨🇳 中文</button>
+<button class="lang-option" data-lang="ko" role="option" type="button">🇰🇷 한국어</button>
+<button class="lang-option" data-lang="ja" role="option" type="button">🇯🇵 日本語</button>
+<button class="lang-option" data-lang="ar" role="option" type="button">🇸🇦 العربية</button>
+<button class="lang-option" data-lang="he" role="option" type="button">🇮🇱 עברית</button>
+<button class="lang-option" data-lang="zh-TW" role="option" type="button">🇹🇼 繁體中文</button>
+<button class="lang-option" data-lang="eo" role="option" type="button">🌐 ESPERANTO</button>
+<button class="lang-option" data-lang="ca" role="option" type="button">CAT CATALÀ</button>
+<button class="lang-option" data-lang="sv" role="option" type="button">🇸🇪 SVENSKA</button>
+<button class="lang-option" data-lang="de" role="option" type="button">🇩🇪 DEUTSCH</button>
+<button class="lang-option" data-lang="ru" role="option" type="button">🇷🇺 РУССКИЙ</button>
+<button class="lang-option" data-lang="cs" role="option" type="button">🇨🇿 ČEŠTINA</button>
+<button class="lang-option" data-lang="sk" role="option" type="button">🇸🇰 SLOVENČINA</button>
+<button class="lang-option" data-lang="bg" role="option" type="button">🇧🇬 БЪЛГАРСКИ</button>
+<button class="lang-option" data-lang="uk" role="option" type="button">🇺🇦 УКРАЇНСЬКА</button>
 </div>
 </div>
 </nav>
@@ -2331,8 +2347,42 @@ const languageLabels={
   es:'🇪🇸 ES',
   fr:'🇫🇷 FR',
   pt:'🇧🇷 PT',
-  it:'🇮🇹 IT'
+  it:'🇮🇹 IT',
+  ht:'🇭🇹 KREYÒL',
+  'zh-CN':'🇨🇳 中文',
+  ko:'🇰🇷 한국어',
+  ja:'🇯🇵 日本語',
+  ar:'🇸🇦 العربية',
+  he:'🇮🇱 עברית',
+  'zh-TW':'🇹🇼 繁體中文',
+  eo:'🌐 ESPERANTO',
+  ca:'CAT CATALÀ',
+  sv:'🇸🇪 SVENSKA',
+  de:'🇩🇪 DEUTSCH',
+  ru:'🇷🇺 РУССКИЙ',
+  cs:'🇨🇿 ČEŠTINA',
+  sk:'🇸🇰 SLOVENČINA',
+  bg:'🇧🇬 БЪЛГАРСКИ',
+  uk:'🇺🇦 УКРАЇНСЬКА'
 };
+
+const nativeSiteLangs=['en','es','fr','pt','it'];
+const autoSiteLangs=['ht','zh-CN','ko','ja','ar','he','zh-TW','eo','ca','sv','de','ru','cs','sk','bg','uk'];
+let googleTranslateReady=false;
+function googleTranslateElementInit(){
+  new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'ht,zh-CN,ko,ja,ar,iw,zh-TW,eo,ca,sv,de,ru,cs,sk,bg,uk',autoDisplay:false},'google_translate_element');
+  googleTranslateReady=true;
+}
+function clearGoogleTranslation(){
+  const combo=document.querySelector('.goog-te-combo');
+  if(combo && combo.value){combo.value='en';combo.dispatchEvent(new Event('change'));}
+}
+function applyAutomaticTranslation(lang,tries=0){
+  const googleLang=lang==='he'?'iw':lang;
+  const combo=document.querySelector('.goog-te-combo');
+  if(combo){combo.value=googleLang;combo.dispatchEvent(new Event('change'));return;}
+  if(tries<30)setTimeout(()=>applyAutomaticTranslation(lang,tries+1),150);
+}
 
 function closeLanguagePicker(){
   if(!langPicker || !langBtn) return;
@@ -2343,10 +2393,19 @@ function closeLanguagePicker(){
 function setLang(lang){
   siteLang=lang;
   document.documentElement.lang=lang;
-  document.querySelectorAll('[data-en]').forEach(el=>{
-    const value=el.dataset[lang];
-    if(value!==undefined) el.textContent=value;
-  });
+  document.documentElement.dir=(lang==='ar'||lang==='he')?'rtl':'ltr';
+  // First restore the site's authored English text as the source for automatic translations.
+  document.querySelectorAll('[data-en]').forEach(el=>{el.textContent=el.dataset.en;});
+  if(nativeSiteLangs.includes(lang)){
+    clearGoogleTranslation();
+    document.querySelectorAll('[data-en]').forEach(el=>{
+      const value=el.dataset[lang];
+      if(value!==undefined) el.textContent=value;
+    });
+  }else if(autoSiteLangs.includes(lang)){
+    clearGoogleTranslation();
+    setTimeout(()=>applyAutomaticTranslation(lang),80);
+  }
   if(langCurrentLabel) langCurrentLabel.textContent=languageLabels[lang] || languageLabels.en;
   document.querySelectorAll('.lang-option').forEach(option=>{
     option.setAttribute('aria-selected',option.dataset.lang===lang?'true':'false');
@@ -2355,13 +2414,13 @@ function setLang(lang){
 }
 
 function detectPreferredLanguage(){
-  const supported=['en','es','fr','pt','it'];
+  const supported=['en','es','fr','pt','it','ht','zh','ko','ja','ar','he','iw','eo','ca','sv','de','ru','cs','sk','bg','uk'];
   const prefs=(navigator.languages && navigator.languages.length
     ? navigator.languages
     : [navigator.language || navigator.userLanguage || 'en']);
   for(const item of prefs){
     const code=String(item).toLowerCase().split('-')[0];
-    if(supported.includes(code)) return code;
+    if(code==='zh') return String(item).toLowerCase().includes('tw')?'zh-TW':'zh-CN'; if(code==='iw') return 'he'; if(supported.includes(code)) return code;
   }
   return 'en';
 }
@@ -2448,4 +2507,13 @@ window.addEventListener('resize',setResponsiveArt);
 })();
 
 </script>
+<style id="added-language-engine-only">
+#google_translate_element{position:fixed!important;left:-9999px!important;top:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.goog-te-banner-frame.skiptranslate,.goog-te-banner-frame{display:none!important}
+body{top:0!important}
+html[dir="rtl"] nav#nav{text-align:right!important}
+</style>
+<div id="google_translate_element" style="display:none"></div>
+<script>window.googleTranslateElementInit=googleTranslateElementInit;</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body></html>
