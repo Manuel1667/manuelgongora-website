@@ -1440,6 +1440,9 @@ header{background:#fff!important;}
 }
 </style>
 
+<style id="home-biography-button-only-10oct">
+#home-biography-button .biography-home-list{max-width:1180px;margin:0 auto;}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1483,6 +1486,17 @@ Construído a partir de seus próprios parâmetros pictóricos — linha, gesto,
 <div class="card series-link"><button class="series-card-button" data-series-page="page-linea" type="button"><span>06 · <span data-en="SERIES" data-es="SERIE" data-fr="SÉRIE" data-it="SERIE" data-pt="SÉRIE">SERIES</span></span><strong data-en="Expression of the Line" data-es="Expresión de la Línea" data-fr="Expression de la Ligne" data-it="Espressione della Linea" data-pt="Expressão da Linha">Expression of the Line</strong></button></div>
 <div class="card series-link"><button class="series-card-button" data-series-page="page-mixed" type="button"><span>07 · <span data-en="MIXED" data-es="MIXTAS" data-fr="MIXTES" data-it="MISTI" data-pt="MISTAS">MIXED</span></span><strong data-en="Mix Paintings" data-es="Pinturas Mixtas" data-fr="Peintures Mixtes" data-it="Dipinti Misti" data-pt="Pinturas Mistas">Mix Paintings</strong></button></div>
 </div></section>
+<section class="content" id="home-biography-button">
+<h2 data-en="Biography" data-es="Biografía" data-fr="Biographie" data-it="Biografia" data-pt="Biografia">Biography</h2>
+<div class="paintings-series-list biography-home-list">
+<button class="paintings-series-card biography-home-card" id="home-biography-card" type="button">
+<div class="paintings-series-name">
+<span class="paintings-series-title" data-en="The Artist" data-es="El Artista" data-fr="L’Artiste" data-it="L’Artista" data-pt="O Artista">The Artist</span>
+</div>
+<div class="paintings-series-image"><img alt="Manuel Góngora" src="assets/artwork-e761d8ad1184b6ec.jpg"/></div>
+</button>
+</div>
+</section>
 <section class="content" id="contacto">
 <h2 data-en="Contact" data-es="Contacto" data-fr="Contact" data-it="Contatti" data-pt="Contato">Contact</h2>
 <div class="bio contact-info">
@@ -2172,6 +2186,11 @@ window.addEventListener('popstate',e=>{
     hideAllArtworkPages();
   }
 });
+
+const homeBiographyCard=document.getElementById('home-biography-card');
+if(homeBiographyCard){
+  homeBiographyCard.addEventListener('click',()=>pushView('biography-page'));
+}
 
 const openBiography=document.getElementById('open-biography');
 if(openBiography){
