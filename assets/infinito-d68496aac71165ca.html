@@ -559,20 +559,33 @@ function liquifyRegion(x,y,rw,rh,maxPct=.05){
  let src=g.getImageData(sx,sy,sw,sh),dst=g.createImageData(sw,sh);
  let a=src.data,b=dst.data,amp=Math.min(sw,sh)*clamp(maxPct,.004,.13)*R(.48,.82);
  let horizontal=Math.random()<.5,sign=Math.random()<.5?-1:1;
- let cx=sw*.5,cy=sh*.5,rx=sw*.5,ry=sh*.5;
- for(let yy=0;yy<sh;yy++)for(let xx=0;xx<sw;xx++){
-   let nx=(xx-cx)/rx,ny=(yy-cy)/ry;
-   let envelope=Math.pow(Math.max(0,1-nx*nx),1.7)*Math.pow(Math.max(0,1-ny*ny),1.7);
-   // Una sola ondulación grande, de baja frecuencia, sin vibraciones.
-   let wave=horizontal?Math.sin(ny*Math.PI*.82*rhythmWave+.45):Math.sin(nx*Math.PI*.82*rhythmWave+.45);
-   let delta=sign*amp*envelope*wave;
-   let fx=clamp(xx-(horizontal?delta:0),0,sw-1),fy=clamp(yy-(horizontal?0:delta),0,sh-1);
-   let x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),tx=fx-x0,ty=fy-y0;
-   let k00=(y0*sw+x0)*4,k10=(y0*sw+x1)*4,k01=(y1*sw+x0)*4,k11=(y1*sw+x1)*4,j=(yy*sw+xx)*4;
-   for(let ch=0;ch<3;ch++){let v0=a[k00+ch]*(1-tx)+a[k10+ch]*tx,v1=a[k01+ch]*(1-tx)+a[k11+ch]*tx;b[j+ch]=v0*(1-ty)+v1*ty}
-   b[j+3]=255;
- }
- g.putImageData(dst,sx,sy);
+   let cx=sw*.5,cy=sh*.5,rx=sw*.5,ry=sh*.5;
+  // Misma deformación, mismos píxeles y mismo azar; precalcular términos idénticos
+  // evita repetir Math.pow y Math.sin millones de veces al abrir una obra.
+  const envX=new Float64Array(sw),envY=new Float64Array(sh);
+  const waveX=horizontal?null:new Float64Array(sw);
+  const waveY=horizontal?new Float64Array(sh):null;
+  for(let xx=0;xx<sw;xx++){
+    let nx=(xx-cx)/rx;
+    envX[xx]=Math.pow(Math.max(0,1-nx*nx),1.7);
+    if(!horizontal)waveX[xx]=Math.sin(nx*Math.PI*.82*rhythmWave+.45);
+  }
+  for(let yy=0;yy<sh;yy++){
+    let ny=(yy-cy)/ry;
+    envY[yy]=Math.pow(Math.max(0,1-ny*ny),1.7);
+    if(horizontal)waveY[yy]=Math.sin(ny*Math.PI*.82*rhythmWave+.45);
+  }
+  for(let yy=0;yy<sh;yy++)for(let xx=0;xx<sw;xx++){
+    let envelope=envX[xx]*envY[yy];
+    let wave=horizontal?waveY[yy]:waveX[xx];
+    let delta=sign*amp*envelope*wave;
+    let fx=clamp(xx-(horizontal?delta:0),0,sw-1),fy=clamp(yy-(horizontal?0:delta),0,sh-1);
+    let x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),tx=fx-x0,ty=fy-y0;
+    let k00=(y0*sw+x0)*4,k10=(y0*sw+x1)*4,k01=(y1*sw+x0)*4,k11=(y1*sw+x1)*4,j=(yy*sw+xx)*4;
+    for(let ch=0;ch<3;ch++){let v0=a[k00+ch]*(1-tx)+a[k10+ch]*tx,v1=a[k01+ch]*(1-tx)+a[k11+ch]*tx;b[j+ch]=v0*(1-ty)+v1*ty}
+    b[j+3]=255;
+  }
+g.putImageData(dst,sx,sy);
 }
 // "Toalla de papel": levanta negro dentro de la masa y deja grises/blancos irregulares antes de volver a mezclar.
 function liftBlack(){ /* No agregar aguadas ni levantar pigmento: conservar masa y grises. */ }
