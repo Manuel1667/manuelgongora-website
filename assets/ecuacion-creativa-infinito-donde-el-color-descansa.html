@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Manuel Góngora — Ecuación Creativa Infinito: Donde el color descansa — Obra viva</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:#403347}
+canvas{display:block;width:100vw;height:100vh;touch-action:none}
+
+/* Solo pantalla inicial para conceder acceso a una carpeta. No hay botones de guardado. */
+#folderStart{position:fixed;inset:0;z-index:30;background:rgba(24,20,30,.88);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#fff;text-align:center}
+#folderStart .panel{max-width:410px;padding:26px;background:rgba(45,39,56,.96);border:1px solid rgba(255,255,255,.20);border-radius:16px;box-shadow:0 14px 48px rgba(0,0,0,.25)}
+#folderStart h1{font-size:19px;line-height:1.3;margin:0 0 12px;font-weight:600}
+#folderStart p{font-size:14px;line-height:1.5;color:#dedbe3;margin:0 0 18px}
+#chooseFolder{padding:12px 18px;background:#f3eff9;border:0;border-radius:8px;color:#27202d;font-size:15px;font-weight:600;cursor:pointer}
+#folderError{font-size:13px;line-height:1.4;color:#ffd2d2;margin-top:14px;min-height:0}
+#folderStart[hidden]{display:none}
+</style>
+</head>
+<body>
+<canvas id="obra" aria-label="Ecuación Creativa Infinito — Donde el color descansa. Obra viva que pinta continuamente." role="img"></canvas>
+<div id="folderStart" role="dialog" aria-modal="true" aria-label="Elegir carpeta de imágenes">
+  <div class="panel">
+    <h1>Ecuación Creativa Infinito — Donde el color descansa</h1>
+    <p>Elige una carpeta una sola vez. Después, cada obra terminada se guardará allí automáticamente como imagen PNG de alta resolución.</p>
+    <button type="button" id="chooseFolder">Elegir carpeta e iniciar</button>
+    <div id="folderError" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+'use strict';
+/*
+  ECUACIÓN CREATIVA INFINITO — THE BIG BANG
+  Manuel Góngora / primera prueba del lenguaje del pincel
+  Proyecto NUEVO independiente de Inteligencia Artificial.
+
+  El pincel pinta progresivamente en toda la obra: ningún elemento se estampa
+  como un objeto terminado. La presión varía de punta a masa y vuelve a punta.
+  Orden: fondo con brochas 150–250 px, formas con brochas medianas y gruesas,
+  detalles de 1–9 px. Fondo fundido de 2 o 3 colores. Nunca negro del espacio.
+  Cada pintura tarda 4–6 minutos; permanece 2 s y comienza otra.
+*/
+const canvas=document.getElementById('obra');
+const ctx=canvas.getContext('2d',{alpha:false});
+const baseLayer=document.createElement('canvas');
+const baseCtx=baseLayer.getContext('2d',{alpha:false});
+const TAU=2*Math.PI;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const integer=(a,b)=>Math.floor(rand(a,b+1));
+const choose=a=>a[Math.floor(Math.random()*a.length)];
+const chance=p=>Math.random()<p;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>t*t*(3-2*t);
+const clamp01=t=>clamp(t,0,1);
+const rgb=c=>`rgb(${c.map(x=>Math.round(clamp(x,0,255))).join(',')})`;
+const mix=(a,b,t)=>a.map((v,i)=>lerp(v,b[i],t));
+let W=1200,H=760,D=1,workNo=0;
+let startAt=0,finishAt=0,holdAt=0,phase='paint',paused=false,cycleCompleted=false;
+let actions=[],actionIndex=0,completed=0;
+let bg=[],accents=[],colorMood=0,bgMode='mixed',composition=null;
+let pendingResize=0,nextLiquifyAt=0,bgEndAt=0,formsEndAt=0,detailStartAt=0,liquifyPool=[];
+let bgPool=[],formPool=[],detailPool=[],liquifyEvents=[],liquifyIndex=0,detailPalette=[];
+
+function hsl(h,s,l){
+ h=((h%360)+360)%360/60;s=clamp01(s);l=clamp01(l);
+ const C=(1-Math.abs(2*l-1))*s,X=C*(1-Math.abs(h%2-1)),m=l-C/2;
+ const q=h<1?[C,X,0]:h<2?[X,C,0]:h<3?[0,C,X]:h<4?[0,X,C]:h<5?[X,0,C]:[C,0,X];
+ return q.map(t=>(t+m)*255);
+}
+function pigment(h,s,l){return mix(hsl(h,s,l),hsl(h+180,s,l),.06)}
+function illuminate(a,t){return mix(a,[247,237,220],clamp01(t))}
+function deepen(a,t){return mix(a,[34,27,44],clamp01(t))}
+function complement(a){return [255-a[0],255-a[1],255-a[2]]}
+function vibrantComplement(a){
+ const c=complement(a);
+ return mix(c,illuminate(c,.10),.18);
+}
+function preparePalette(){
+ const families=[
+  {name:'red',h:rand(350,10)},
+  {name:'violet',h:rand(262,282)},
+  {name:'purple',h:rand(286,310)},
+  {name:'green',h:rand(108,145)},
+  {name:'blue',h:rand(198,234)},
+  {name:'ochre',h:rand(36,52)},
+  {name:'caramel',h:rand(18,32)},
+  {name:'yellow',h:rand(52,66)}
+ ];
+ const picks=[];
+ bgMode=choose(['light','medium','dark','mixed']);
+ // Rojo siempre presente y reforzado, junto a fríos y cálidos.
+ picks.push(families[0]);
+ picks.push(chance(.5)?families[4]:(chance(.5)?families[1]:families[2]));
+ picks.push(chance(.5)?families[5]:families[6]);
+ while(picks.length<integer(5,7)){
+  const cand=choose(families);
+  if(!picks.includes(cand))picks.push(cand);
+ }
+ const toneForMode=()=>{
+  if(bgMode==='light') return rand(.48,.78);
+  if(bgMode==='medium') return rand(.28,.56);
+  if(bgMode==='dark') return rand(.12,.34);
+  return choose([rand(.14,.30),rand(.28,.50),rand(.48,.76)]);
+ };
+ bg=[];
+ const redH=families[0].h;
+ bg.push(pigment(redH+rand(-8,8),rand(.58,.92),bgMode==='light'?rand(.56,.78):bgMode==='medium'?rand(.34,.56):bgMode==='dark'?rand(.16,.32):choose([rand(.18,.32),rand(.34,.56),rand(.56,.76)])));
+ bg.push(pigment(redH+rand(-10,10),rand(.50,.86),bgMode==='light'?rand(.44,.66):bgMode==='medium'?rand(.24,.46):bgMode==='dark'?rand(.12,.24):choose([rand(.16,.28),rand(.24,.46),rand(.44,.64)])));
+ bg.push(pigment(redH+rand(-12,12),rand(.36,.72),rand(.12,.22)));
+ for(let i=1;i<picks.length;i++){
+  const fh=picks[i].h;
+  bg.push(pigment(fh+rand(-14,14),rand(.40,.92),toneForMode()));
+ }
+ bg.push(pigment(choose(picks).h+rand(-10,10),rand(.30,.66),rand(.62,.84)));
+ const darkA=mix(pigment(rand(350,15),.68,.20),pigment(rand(208,238),.62,.18),.52);
+ const darkB=mix(pigment(rand(20,52),.66,.22),pigment(rand(265,305),.58,.18),.48);
+ const nearBlack=mix(darkA,darkB,.50);
+ bg.push(mix(nearBlack,choose(bg),.12));
+ accents=[];
+ for(let i=0;i<Math.max(12,picks.length*3);i++){
+  const fam=i<3?families[0]:picks[i%picks.length];
+  const base=choose(bg);
+  const vivid=pigment(fam.h+rand(-24,24),rand(.56,.98),rand(.26,.78));
+  accents.push(
+    chance(.24)?vibrantComplement(base):
+    chance(.28)?illuminate(vivid,rand(.12,.34)):
+    chance(.18)?deepen(vivid,rand(.12,.28)):
+    mix(vivid,base,rand(.04,.18))
+  );
+ }
+ detailPalette=[];
+ const dominant=[...bg.slice(0,Math.min(6,bg.length)),...accents.slice(0,Math.min(8,accents.length))];
+ for(const col of dominant){
+   const c=vibrantComplement(col);
+   detailPalette.push(c);
+   detailPalette.push(illuminate(c,rand(.08,.24)));
+   detailPalette.push(mix(c,choose(accents),rand(.10,.24)));
+ }
+ colorMood=redH;
+}
+function paintPoint(x,y,t){
+ const a=composition.angle,c=composition.centerX,d=composition.centerY;
+ const v=composition.extent*t;
+ return [c+Math.cos(a)*v+x,d+Math.sin(a)*v+y];
+}
+function prepareComposition(){
+ composition={
+  centerX:rand(W*.34,W*.67),centerY:rand(H*.33,H*.67),
+  angle:rand(-1.07,.86),extent:Math.min(W,H)*rand(.34,.50),
+  direction:chance(.5)?1:-1
+ };
+}
+function backgroundBase(){
+ // Base inicial con atmósfera y profundidad, nunca plana.
+ const base=mix(bg[0],deepen(bg[bg.length-1],.18),.35);
+ baseCtx.fillStyle=rgb(base);baseCtx.fillRect(0,0,W,H);
+ atmosphereVeil(baseCtx);
+}
+function atmosphereVeil(context){
+ // Velos grandes, claros y oscuros, para dar profundidad y misterio desde el fondo.
+ for(let i=0;i<4;i++){
+  const cx=rand(W*.08,W*.92),cy=rand(H*.08,H*.92),rx=rand(W*.22,W*.48),ry=rand(H*.18,H*.42);
+  const dark=deepen(choose(bg),rand(.18,.34));
+  const lightCol=illuminate(choose(bg),rand(.10,.22));
+  const grad=context.createRadialGradient(cx-rx*.18,cy-ry*.15,Math.max(8,Math.min(rx,ry)*.10),cx,cy,Math.max(rx,ry));
+  grad.addColorStop(0,rgb(lightCol,.08));
+  grad.addColorStop(.52,rgb(mix(dark,lightCol,.28),.05));
+  grad.addColorStop(1,rgb(dark,.00));
+  context.save();
+  context.fillStyle=grad;
+  context.beginPath();
+  context.ellipse(cx,cy,rx,ry,rand(-1.2,1.2),0,TAU);
+  context.fill();
+  context.restore();
+ }
+ // Vignette suave para misterio.
+ const vg=context.createRadialGradient(W*.48,H*.44,Math.min(W,H)*.16,W*.5,H*.5,Math.max(W,H)*.78);
+ vg.addColorStop(0,'rgba(255,255,255,0)');
+ vg.addColorStop(.72,'rgba(22,18,26,0.00)');
+ vg.addColorStop(1,'rgba(18,14,22,0.18)');
+ context.save(); context.fillStyle=vg; context.fillRect(0,0,W,H); context.restore();
+}
+function makePath(x,y,length,angle,turn=.13,n=35,kind='flow'){
+ let px=x,py=y,a=angle,phase=rand(0,TAU),pts=[[x,y]];
+ const curl=kind==='fold'?rand(-.15,.15):rand(-.055,.055);
+ const wave=rand(.24,1.13),sway=rand(.02,.075);
+ for(let i=1;i<=n;i++){
+  const t=i/n;
+  a+=curl/n*2+Math.sin(t*TAU*wave+phase)*turn/n*7+rand(-sway,sway);
+  const st=length/n*rand(.82,1.15);
+  px+=Math.cos(a)*st;py+=Math.sin(a)*st;
+  pts.push([px,py]);
+ }
+ return pts;
+}
+function strokePressure(t,form){
+ const fadeIn=clamp01(t/(form.in||.10));
+ const fadeOut=clamp01((1-t)/(form.out||.12));
+ let env=Math.pow(Math.sin(fadeIn*Math.PI*.5)*Math.sin(fadeOut*Math.PI*.5),.70);
+ const pulse=1+form.wave*Math.sin(t*TAU*form.freq+form.phase)
+                +form.wave*.42*Math.sin(t*TAU*(form.freq*2.3)+form.phase*1.9);
+ if(form.flat)env=.62+.38*env;
+ return clamp(env*pulse,.007,1.22);
+}
+function strokePoints(pts,width,color,opts={}){
+ return {
+  pts, width,color,alpha:opts.alpha??rand(.55,.92),
+  precision:opts.precision??1,
+  blend:opts.blend||null,
+  edgeSoft:opts.edgeSoft??(opts.kind==='background'?1:.72),
+  taperMode:opts.taperMode||null,
+  pressure:{in:opts.in??rand(.06,.18),out:opts.out??rand(.08,.20),
+   phase:rand(0,TAU),wave:opts.wave??rand(.08,.22),freq:rand(.65,2.15),flat:!!opts.flat},
+  drawn:0,
+  sheen:opts.sheen??chance(.32),
+  kind:opts.kind||'form',
+  noAutoLiquify:!!opts.noAutoLiquify,
+  t0:0,t1:0,
+  duration:opts.duration||1
+ };
+}
+function pushAction(stage,stroke){actions.push({stage,stroke})}
+
+function buildBackground(){
+ // Fondos muy variados: a veces claros, a veces medios, a veces oscuros, nunca siempre iguales.
+ const passes=integer(14,24);
+ for(let i=0;i<passes;i++){
+  const side=integer(0,7);
+  let x=0,y=0,angle=0;
+  if(side===0){ x=rand(-W*.18,W*1.18); y=-H*.14; angle=rand(.15,2.95); }
+  else if(side===1){ x=W*1.14; y=rand(-H*.18,H*1.18); angle=rand(1.6,4.4); }
+  else if(side===2){ x=rand(-W*.18,W*1.18); y=H*1.14; angle=rand(3.3,6.0); }
+  else if(side===3){ x=-W*.14; y=rand(-H*.18,H*1.18); angle=rand(-1.0,1.2); }
+  else { x=rand(W*.10,W*.90); y=rand(H*.10,H*.90); angle=rand(-Math.PI,Math.PI); }
+  const baseCol=Math.random()<.38?choose(bg.slice(0,3)):chance(.22)?choose(accents):choose(bg);
+  const blendCol=chance(.35)?mix(baseCol,choose(detailPalette),rand(.12,.26)):mix(baseCol,choose(bg),rand(.18,.44));
+  const pts=makePath(x,y,Math.max(W,H)*rand(.48,1.12),angle,rand(.04,.16),integer(26,56),chance(.22)?'fold':'flow');
+  const alphaRange=bgMode==='light'?[.14,.34]:bgMode==='medium'?[.16,.40]:bgMode==='dark'?[.20,.48]:[.14,.46];
+  pushAction('bg',strokePoints(pts,rand(150,250),baseCol,{flat:true,alpha:rand(alphaRange[0],alphaRange[1]),blend:blendCol,edgeSoft:1.02,kind:'background',in:.04,out:.06,wave:rand(.08,.16),sheen:false,duration:rand(.42,.82)}));
+ }
+ // Veladuras largas con colores sorpresa para romper la monotonía.
+ for(let i=0;i<integer(6,12);i++){
+  const x=rand(W*.08,W*.92), y=rand(H*.08,H*.92), a=rand(-Math.PI,Math.PI);
+  const col=Math.random()<.34?choose(bg.slice(0,3)):chance(.30)?choose(detailPalette):chance(.34)?choose(accents):choose(bg);
+  const pts=makePath(x,y,rand(Math.min(W,H)*.44,Math.max(W,H)*.98),a,rand(.05,.18),integer(22,44),chance(.34)?'fold':'flow');
+  const blendCol=mix(col,chance(.50)?choose(bg):choose(accents),rand(.14,.38));
+  pushAction('bg',strokePoints(pts,rand(138,235),col,{alpha:rand(.10,.28),blend:blendCol,edgeSoft:1.06,kind:'background',in:.06,out:.09,wave:rand(.09,.18),flat:true,sheen:false,duration:rand(.42,.84)}));
+ }
+}
+function mainAnchor(){
+ if(chance(.58)){
+  const cols=[.16,.34,.52,.70,.86], rows=[.18,.36,.54,.72,.86];
+  return [W*choose(cols)+rand(-W*.08,W*.08), H*choose(rows)+rand(-H*.08,H*.08)];
+ }
+ const t=rand(-.95,.95),dx=rand(-W*.28,W*.28),dy=rand(-H*.24,H*.24);
+ return paintPoint(dx,dy,t);
+}
+
+function detailSpots(){
+ const spots=[];
+ const total=integer(18,30);
+ for(let i=0;i<total;i++){
+  if(chance(.32))spots.push(mainAnchor());
+  else if(chance(.34))spots.push(paintPoint(rand(-W*.40,W*.40),rand(-H*.32,H*.32),rand(-.94,.94)));
+  else spots.push([rand(W*.10,W*.90),rand(H*.10,H*.90)]);
+ }
+ return spots;
+}
+function arcPath(cx,cy,r,a0,a1,n=18){
+ const pts=[];
+ for(let i=0;i<=n;i++){
+  const t=i/n, a=lerp(a0,a1,t)+Math.sin(t*TAU*rand(.35,1.10)+rand(0,TAU))*0.05;
+  const rr=r*(1+Math.sin(t*TAU*rand(.55,1.45)+rand(0,TAU))*0.08+rand(-.06,.06));
+  pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);
+ }
+ return pts;
+}
+function addSpineDetail(cx,cy,scale,color){
+ const ang=rand(-Math.PI,Math.PI), len=scale*rand(1.1,2.2);
+ const main=makePath(cx,cy,len,ang,rand(.10,.28),integer(12,24),chance(.46)?'fold':'flow');
+ const width=rand(3.0,13.5), taper=chance(.5)?'startHeavy':'endHeavy';
+ color=detailColor(color);
+ pushAction('detail',strokePoints(main,width,color,{alpha:detailAlpha(),blend:mix(color,choose(accents),rand(.10,.24)),edgeSoft:rand(.18,.38),kind:'detail',duration:rand(.20,.56),sheen:false,taperMode:taper,in:rand(.04,.12),out:rand(.04,.14)}));
+ const thorns=integer(1,4);
+ for(let i=1;i<thorns;i++){
+  const p=main[Math.min(main.length-2,Math.max(1,Math.floor(i*(main.length-1)/thorns)))];
+  const side=chance(.5)?1:-1;
+  const a=ang+side*(Math.PI/2)+rand(-.65,.65), tlen=scale*rand(.20,.58);
+  const thorn=makePath(p[0],p[1],tlen,a,rand(.08,.24),integer(8,16),chance(.34)?'fold':'flow');
+  const tc=detailColor(chance(.75)?illuminate(color,rand(.20,.54)):chance(.15)?deepen(color,rand(.12,.24)):color);
+  pushAction('detail',strokePoints(thorn,rand(2.2,8.5),tc,{alpha:detailAlpha(),blend:mix(tc,choose(accents),rand(.08,.22)),edgeSoft:rand(.16,.34),kind:'detail',duration:rand(.14,.40),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.03,.10),out:rand(.03,.12)}));
+ }
+}
+function addArcDetail(cx,cy,scale,color){
+ const r=scale*rand(.42,1.45), span=rand(Math.PI*.55,Math.PI*1.18), a0=rand(-Math.PI,Math.PI);
+ const arc=arcPath(cx,cy,r,a0,a0+span,integer(10,20));
+ color=detailColor(color);
+ pushAction('detail',strokePoints(arc,rand(2,12.5),color,{alpha:detailAlpha(),blend:mix(color,choose(accents),rand(.10,.26)),edgeSoft:rand(.18,.48),kind:'detail',duration:rand(.18,.46),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.09),out:rand(.02,.11)}));
+ if(chance(.38)){
+   const arc2=arcPath(cx+rand(-scale*.22,scale*.22),cy+rand(-scale*.22,scale*.22),r*rand(.55,.92),a0+rand(.14,.55),a0+span-rand(.12,.42),integer(8,16));
+   const c2=detailColor(chance(.78)?illuminate(color,rand(.18,.46)):deepen(color,rand(.08,.20)));
+   pushAction('detail',strokePoints(arc2,rand(2,8),c2,{alpha:detailAlpha(),blend:mix(c2,choose(bg),rand(.06,.18)),edgeSoft:rand(.18,.44),kind:'detail',duration:rand(.16,.36),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.08),out:rand(.02,.10)}));
+ }
+}
+function polygonLoop(cx,cy,rad,sides=4,jitter=.22,rot=0){
+ const pts=[];
+ for(let i=0;i<=sides;i++){
+  const a=rot+TAU*(i/sides), rr=rad*(1+rand(-jitter,jitter));
+  pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);
+ }
+ return pts;
+}
+function crossShape(cx,cy,scale){
+ const a=rand(-Math.PI,Math.PI);
+ const p1=makePath(cx,cy,scale*rand(1.1,2.4),a,rand(.02,.10),integer(10,18),'fold');
+ const p2=makePath(cx,cy,scale*rand(1.0,2.1),a+Math.PI/2+rand(-.32,.32),rand(.02,.10),integer(10,18),'fold');
+ return [p1,p2];
+}
+function buildMainForms(){
+ // Formas orgánicas distribuidas por el lienzo, con algunas masas cuadradas/angulares irregulares.
+ const clusters=integer(7,11);
+ const anchors=[];
+ for(let k=0;k<clusters;k++)anchors.push(mainAnchor());
+ // 1 o 2 formas grandes irregulares, de espíritu cuadrado pero nunca gráficas.
+ const bigBlocks=integer(1,2);
+ for(let i=0;i<bigBlocks;i++){
+  const [cx,cy]=anchors[i%anchors.length];
+  const pts=polygonLoop(cx+rand(-W*.08,W*.08),cy+rand(-H*.08,H*.08),rand(Math.min(W,H)*.12,Math.min(W,H)*.22),4, .34, rand(-.7,.7));
+  let col=chance(.34)?choose(detailPalette):choose(accents);
+  if(chance(.25))col=deepen(col,rand(.10,.22));
+  const blendCol=mix(col,choose(bg),rand(.12,.28));
+  pushAction('forms',strokePoints(pts,rand(52,96),col,{alpha:rand(.15,.50),blend:blendCol,edgeSoft:rand(.04,.10),kind:'form',duration:rand(.68,1.36),sheen:false}));
+ }
+ const total=integer(128,190);
+ for(let i=0;i<total;i++){
+  const a=anchors[i%clusters],centerX=a[0]+rand(-W*.14,W*.14),centerY=a[1]+rand(-H*.14,H*.14);
+  const big=i<8 || chance(.14);
+  const middle=!big&&chance(.72);
+  const width=chance(.16)?rand(150,300):(big?rand(54,92):middle?rand(16,56):rand(10,28));
+  const stretch=chance(.15)?rand(1.6,2.8):1;
+  const length=(big?rand(110,360):middle?rand(80,280):rand(60,220))*stretch;
+  const angle=rand(-Math.PI,Math.PI);
+  const pts=makePath(centerX,centerY,length,angle,rand(.050,.24),integer(22,42),chance(.20)?'fold':'flow');
+  let color=chance(.18)?choose(detailPalette):accents[(i+integer(0,2))%accents.length];
+  if(chance(.16))color=vibrantComplement(color);
+  if(chance(.20))color=illuminate(color,rand(.10,.32));
+  if(chance(.16))color=deepen(color,rand(.12,.30));
+  const blendCol=chance(.72)?mix(color,choose(accents),rand(.18,.42)):mix(color,choose(bg),rand(.14,.30));
+  pushAction('forms',strokePoints(pts,width,color,{alpha:rand(.15,.50),blend:blendCol,edgeSoft:rand(.04,.10),kind:'form',duration:rand(.48,1.18),sheen:false}));
+ }
+ // Masas y brochazos secundarios distribuidos, sin concentrarse en una sola zona.
+ for(let j=0;j<30;j++){
+  const [x,y]=anchors[j%clusters];
+  const base=chance(.22)?choose(detailPalette):accents[(j+2)%accents.length];
+  const dir=rand(-Math.PI,Math.PI),baseR=rand(36,82);
+  for(let k=0;k<integer(2,3);k++){
+   const stretch=chance(.16)?rand(1.6,2.5):1;
+   const pts=makePath(x+rand(-baseR,baseR),y+rand(-baseR,baseR),rand(68,210)*stretch,dir+rand(-.55,.55),rand(.08,.20),integer(20,36),chance(.15)?'fold':'flow');
+   const tint=k%3===0?illuminate(base,rand(.12,.32)):k%3===1?deepen(base,rand(.08,.22)):base;
+   const surprise=chance(.15)?choose(detailPalette):tint;
+   const blendTint=chance(.66)?mix(surprise,choose(accents),rand(.16,.36)):mix(surprise,choose(bg),rand(.12,.28));
+   pushAction('forms',strokePoints(pts,chance(.16)?rand(150,300):rand(22,62),surprise,{alpha:rand(.15,.48),blend:blendTint,edgeSoft:rand(.04,.10),kind:'form',duration:rand(.46,.94),sheen:false}));
+  }
+ }
+}
+function detailAlpha(){
+ // Detalles muy translúcidos: entre 10% y 30% de opacidad.
+ return rand(.10,.30);
+}
+function detailColor(base){
+ // Los detalles deben dialogar con el cuadro usando sobre todo los complementarios de los colores dominantes.
+ const comp=detailPalette.length?choose(detailPalette):vibrantComplement(base);
+ if(chance(.44)) return illuminate(comp,rand(.10,.34));
+ if(chance(.24)) return mix(comp,base,rand(.08,.20));
+ if(chance(.18)) return mix(comp,choose(accents),rand(.10,.24));
+ if(chance(.08)) return comp;
+ return deepen(comp,rand(.04,.18));
+}
+function liquifyEveryDetail(context,s){
+ // Cada detalle recibe su propia deformación para ganar magia y organicidad.
+ const r=strokeBounds(s);
+ const pad=Math.max(10,s.width*1.8);
+ const x=clamp(r.x-pad,0,W), y=clamp(r.y-pad,0,H);
+ const w=Math.min(W-x,r.w+pad*2), h=Math.min(H-y,r.h+pad*2);
+ if(w<10||h<10)return;
+ liquifyRegion(context,x,y,w,h,rand(.045,.080));
+ if(chance(.85)) liquifyRegion(context,x,y,w,h,rand(.030,.070));
+}
+function liquifyFormStroke(context,s){
+ const r=strokeBounds(s);
+ const pad=Math.max(16,s.width*1.1);
+ const x=clamp(r.x-pad,0,W), y=clamp(r.y-pad,0,H);
+ const w=Math.min(W-x,r.w+pad*2), h=Math.min(H-y,r.h+pad*2);
+ if(w<12||h<12)return;
+ liquifyRegion(context,x,y,w,h,rand(.045,.085));
+ if(chance(.74)) liquifyRegion(context,x,y,w,h,rand(.032,.070));
+}
+
+function addRareLadder(cx,cy,scale,color){
+ const ang=rand(-Math.PI,Math.PI), gap=scale*rand(.10,.22), len=scale*rand(1.1,2.0), n=integer(4,9);
+ const p1=makePath(cx-Math.cos(ang+Math.PI/2)*gap*.5,cy-Math.sin(ang+Math.PI/2)*gap*.5,len,ang,rand(.01,.06),integer(8,16));
+ const p2=makePath(cx+Math.cos(ang+Math.PI/2)*gap*.5,cy+Math.sin(ang+Math.PI/2)*gap*.5,len,ang,rand(.01,.06),integer(8,16));
+ const lc=detailColor(color);
+ pushAction('detail',strokePoints(p1,rand(2.2,8),lc,{alpha:detailAlpha(),blend:mix(lc,choose(bg),rand(.04,.14)),edgeSoft:rand(.18,.40),kind:'detail',duration:rand(.18,.40),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.08),out:rand(.02,.10)}));
+ pushAction('detail',strokePoints(p2,rand(2.2,8),lc,{alpha:detailAlpha(),blend:mix(lc,choose(bg),rand(.04,.14)),edgeSoft:rand(.18,.40),kind:'detail',duration:rand(.18,.40),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.08),out:rand(.02,.10)}));
+ for(let i=1;i<n;i++){
+  const t=i/n, mx=lerp(p1[0][0],p1[p1.length-1][0],t), my=lerp(p1[0][1],p1[p1.length-1][1],t);
+  const rung=makePath(mx,my,gap*rand(.7,1.2),ang+Math.PI/2,rand(.01,.05),integer(5,10));
+  pushAction('detail',strokePoints(rung,rand(2,6),detailColor(color),{alpha:detailAlpha(),blend:mix(color,choose(accents),rand(.06,.18)),edgeSoft:rand(.18,.36),kind:'detail',duration:rand(.12,.26),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.06),out:rand(.02,.08)}));
+ }
+}
+function addHexDetail(cx,cy,scale,color){
+ const pts=polygonLoop(cx,cy,scale*rand(.22,.58),6,.28,rand(-.8,.8));
+ const c=detailColor(color);
+ pushAction('detail',strokePoints(pts,rand(2.6,8.2),c,{alpha:detailAlpha(),blend:mix(c,choose(detailPalette.length?detailPalette:accents),rand(.08,.18)),edgeSoft:rand(.14,.30),kind:'detail',duration:rand(.22,.50),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.08),out:rand(.02,.10)}));
+}
+function addCircleDetail(cx,cy,scale,color){
+ const pts=arcPath(cx,cy,scale*rand(.26,.72),rand(0,TAU),rand(0,TAU)+TAU*rand(.82,1.18),integer(14,26));
+ const c=detailColor(color);
+ pushAction('detail',strokePoints(pts,rand(2.2,7.4),c,{alpha:detailAlpha(),blend:mix(c,choose(detailPalette.length?detailPalette:accents),rand(.06,.18)),edgeSoft:rand(.14,.28),kind:'detail',duration:rand(.18,.46),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.08),out:rand(.02,.10)}));
+}
+function addCrossDetail(cx,cy,scale,color){
+ const c=detailColor(color);
+ for(const pts of crossShape(cx,cy,scale*rand(.36,.86))){
+  pushAction('detail',strokePoints(pts,rand(2.5,10.5),c,{alpha:detailAlpha(),blend:mix(c,choose(detailPalette.length?detailPalette:accents),rand(.06,.18)),edgeSoft:rand(.18,.44),kind:'detail',duration:rand(.18,.42),sheen:false,taperMode:chance(.5)?'startHeavy':'endHeavy',in:rand(.02,.08),out:rand(.02,.10)}));
+ }
+}
+
+function addRareWeirdThing(cx,cy,scale,color){
+ const c1=detailColor(color), c2=detailColor(mix(color,choose(accents),rand(.10,.26)));
+ addArcDetail(cx,cy,scale*rand(.45,.95),c1);
+ addInterlacedDetail(cx+rand(-scale*.12,scale*.12),cy+rand(-scale*.12,scale*.12),scale*rand(.40,.80),c2);
+ if(chance(.58)) addSpineDetail(cx+rand(-scale*.15,scale*.15),cy+rand(-scale*.15,scale*.15),scale*rand(.36,.78),detailColor(color));
+}
+
+function addInterlacedDetail(cx,cy,scale,color){
+ const baseAngle=rand(-Math.PI,Math.PI);
+ const len1=scale*rand(2.0,5.0), len2=scale*rand(1.4,3.6);
+ const p1=makePath(cx+rand(-scale*.14,scale*.14),cy+rand(-scale*.14,scale*.14),len1,baseAngle,rand(.14,.30),integer(18,30),chance(.44)?'fold':'flow');
+ const c1=detailColor(chance(.78)?illuminate(color,rand(.18,.38)):color);
+ pushDetailStroke(p1,chance(.24)?rand(7,18):rand(3.8,11.2),c1,{duration:rand(.22,.50),edgeSoft:rand(.10,.26)});
+ if(chance(.72)){
+   const p2=makePath(cx+rand(-scale*.10,scale*.10),cy+rand(-scale*.10,scale*.10),len2,baseAngle+rand(.55,1.18)*(chance(.5)?1:-1),rand(.12,.28),integer(12,22),chance(.42)?'fold':'flow');
+   const c2=detailColor(chance(.72)?illuminate(mix(color,choose(accents),rand(.10,.22)),rand(.08,.24)):mix(color,choose(accents),rand(.10,.22)));
+   pushDetailStroke(p2,chance(.20)?rand(6,14):rand(2.8,8.4),c2,{duration:rand(.18,.40),edgeSoft:rand(.10,.24)});
+ }
+ if(chance(.42)) addArcDetail(cx+rand(-scale*.14,scale*.14),cy+rand(-scale*.14,scale*.14),scale*rand(.32,.70),chance(.75)?illuminate(color,rand(.18,.34)):color);
+ if(chance(.20)) addLightDots(cx,cy,scale,color,integer(1,2));
+}
+
+function pushDetailStroke(pts,w,color,extra={}){
+ pushAction('detail',strokePoints(pts,w,color,{alpha:detailAlpha(),blend:extra.blend||mix(color,choose(detailPalette.length?detailPalette:accents),rand(.06,.18)),edgeSoft:extra.edgeSoft??rand(.12,.34),kind:'detail',duration:extra.duration??rand(.18,.54),sheen:false,taperMode:extra.taperMode||choose(['startHeavy','endHeavy']),in:extra.in??rand(.02,.08),out:extra.out??rand(.02,.12),noAutoLiquify:!!extra.noAutoLiquify}));
+}
+function addLightDots(cx,cy,scale,color,count=integer(2,6)){
+ for(let i=0;i<count;i++){
+  const x=cx+rand(-scale*.70,scale*.70), y=cy+rand(-scale*.70,scale*.70), c=illuminate(detailColor(color),rand(.18,.40));
+  const pts=[[x,y],[x+rand(-1.6,1.6),y+rand(-1.6,1.6)]];
+  pushDetailStroke(pts,rand(1.4,4.6),c,{duration:rand(.08,.18),edgeSoft:rand(.12,.28)});
+ }
+}
+function addElementDetail(cx,cy,scale,color){
+ // Elementos más orgánicos: curvos, retorcidos y construidos por partes.
+ const branches=integer(2,4);
+ const mainAngle=rand(-Math.PI,Math.PI);
+ let pivot=[cx+rand(-scale*.18,scale*.18),cy+rand(-scale*.18,scale*.18)];
+ for(let b=0;b<branches;b++){
+  const segs=integer(2,4);
+  let angle=mainAngle+rand(-1.0,1.0)+(b-branches*.5)*rand(.16,.48);
+  let here=[pivot[0]+rand(-scale*.16,scale*.16),pivot[1]+rand(-scale*.16,scale*.16)];
+  for(let s=0;s<segs;s++){
+    const len=scale*rand(1.6,3.8);
+    const pts=makePath(here[0],here[1],len,angle,rand(.14,.34),integer(18,34),chance(.56)?'fold':'flow');
+    const c=detailColor(chance(.58)?illuminate(color,rand(.08,.22)):mix(color,choose(detailPalette.length?detailPalette:accents),rand(.08,.20)));
+    const w=s===0?(chance(.22)?rand(8,18):rand(4.2,11.6)):(chance(.18)?rand(6,14):rand(2.8,8.4));
+    pushDetailStroke(pts,w,c,{duration:rand(.20,.52),edgeSoft:rand(.12,.28),taperMode:chance(.5)?'startHeavy':'endHeavy'});
+    if(chance(.34)){
+      const loop=arcPath(here[0]+rand(-scale*.18,scale*.18),here[1]+rand(-scale*.18,scale*.18),scale*rand(.14,.42),rand(-Math.PI,Math.PI),rand(-Math.PI,Math.PI)+rand(2.2,5.1),integer(8,16));
+      pushDetailStroke(loop,rand(2.2,6.6),detailColor(c),{duration:rand(.16,.34),edgeSoft:rand(.10,.24)});
+    }
+    here=pts[pts.length-1];
+    angle+=rand(-1.35,1.35);
+    if(chance(.24)){
+      const sub=makePath(here[0],here[1],scale*rand(.45,1.25),angle+rand(.7,1.8)*(chance(.5)?1:-1),rand(.12,.28),integer(10,18),chance(.44)?'fold':'flow');
+      pushDetailStroke(sub,rand(2.2,6.2),detailColor(c),{duration:rand(.14,.34),edgeSoft:rand(.10,.24)});
+    }
+  }
+ }
+ if(chance(.54)) addArcDetail(cx+rand(-scale*.18,scale*.18),cy+rand(-scale*.18,scale*.18),scale*rand(.34,.84),color);
+ if(chance(.14)) addCrossDetail(cx+rand(-scale*.16,scale*.16),cy+rand(-scale*.16,scale*.16),scale*rand(.24,.52),color);
+ if(chance(.14)) addHexDetail(cx+rand(-scale*.16,scale*.16),cy+rand(-scale*.16,scale*.16),scale*rand(.22,.42),color);
+ addLightDots(cx,cy,scale,color,integer(1,3));
+}
+function addRibbonElement(cx,cy,scale,color){
+ const loops=integer(2,4);
+ let angle=rand(-Math.PI,Math.PI);
+ let start=[cx+rand(-scale*.20,scale*.20),cy+rand(-scale*.20,scale*.20)];
+ for(let i=0;i<loops;i++){
+  const len=scale*rand(1.8,4.8);
+  const pts=makePath(start[0],start[1],len,angle,rand(.16,.34),integer(18,34),chance(.50)?'fold':'flow');
+  const c=detailColor(chance(.48)?color:mix(color,choose(accents),rand(.10,.20)));
+  pushDetailStroke(pts,chance(.24)?rand(7,16):rand(3.6,10.2),c,{duration:rand(.20,.50),edgeSoft:rand(.10,.26),taperMode:chance(.55)?'startHeavy':'endHeavy'});
+  start=pts[pts.length-1];
+  angle+=rand(-1.75,1.75);
+  if(chance(.30)){
+    const orbit=arcPath(start[0],start[1],scale*rand(.10,.30),angle,angle+rand(1.8,4.6),integer(8,14));
+    pushDetailStroke(orbit,rand(1.8,5.4),detailColor(c),{duration:rand(.14,.30),edgeSoft:rand(.10,.22)});
+  }
+ }
+ if(chance(.30)) addInterlacedDetail(cx,cy,scale*rand(.52,0.98),color);
+ addLightDots(cx,cy,scale,color,integer(1,3));
+}
+function signaturePath(wordW,wordH){
+ const pts=[];
+ const add=(arr)=>{for(const p of arr)pts.push([p[0]*wordW,p[1]*wordH]);};
+ // Firma gestual simplificada: Góngora.
+ add([[0.02,0.68],[0.01,0.40],[0.12,0.14],[0.28,0.12],[0.36,0.24],[0.24,0.26],[0.18,0.40],[0.26,0.58],[0.40,0.60],[0.46,0.48],[0.34,0.46]]);
+ add([[0.50,0.48],[0.57,0.34],[0.67,0.34],[0.72,0.48],[0.66,0.62],[0.56,0.60],[0.50,0.48]]);
+ add([[0.55,0.18],[0.61,0.08]]); // acento
+ add([[0.75,0.60],[0.76,0.36],[0.84,0.34],[0.92,0.48],[0.92,0.62]]);
+ add([[0.94,0.60],[1.02,0.34],[1.12,0.34],[1.18,0.48],[1.10,0.64],[1.00,0.60]]);
+ add([[1.18,0.46],[1.26,0.34],[1.32,0.42],[1.26,0.58]]);
+ add([[1.36,0.60],[1.38,0.34],[1.48,0.34],[1.54,0.48],[1.48,0.62],[1.38,0.60]]);
+ return pts;
+}
+function addSignature(){
+ const span=W*rand(.085,.115), height=span*0.16;
+ const margin=W*.03, marginY=H*.035;
+ const corner=choose(['tl','tr','bl','br']);
+ let x=margin, y=marginY;
+ if(corner==='tr'){x=W-margin-span*1.56; y=marginY;}
+ else if(corner==='bl'){x=margin; y=H-marginY-height*1.6;}
+ else if(corner==='br'){x=W-margin-span*1.56; y=H-marginY-height*1.6;}
+ const base=signaturePath(span,height).map(p=>[p[0]+x,p[1]+y]);
+ const c=illuminate(detailColor(choose(accents)),rand(.12,.28));
+ pushAction('detail',strokePoints(base,rand(3.0,4.2),c,{alpha:rand(.55,.82),blend:mix(c,choose(bg),rand(.04,.12)),edgeSoft:rand(.18,.36),kind:'detail',duration:rand(.28,.60),sheen:false,taperMode:'endHeavy',in:.02,out:.08,noAutoLiquify:true}));
+}
+
+function buildDetails(){
+ // Versión sin detalles.
+}
+function organizeActions(){
+ const bgActs=actions.filter(a=>a.stage==='bg');
+ const formActs=actions.filter(a=>a.stage==='forms');
+ const detailActs=actions.filter(a=>a.stage==='detail');
+ // 15% de ejecución para fondo / 58% masas y formas / 27% detalles.
+ const duration=finishAt-startAt;
+ function setTiming(items,a,b){
+   const weights=items.map(x=>x.stroke.duration),sum=weights.reduce((a,b)=>a+b,0)||1;
+   let now=startAt+duration*a;
+   for(let i=0;i<items.length;i++){
+     const d=duration*(b-a)*weights[i]/sum;
+     items[i].from=now;items[i].to=now+d;
+     now+=d;
+   }
+ }
+ setTiming(bgActs,0,.15);
+ setTiming(formActs,.15,.73);
+ setTiming(detailActs,.73,1.00);
+ bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:(startAt+duration*.15);
+ formsEndAt=formActs.length?formActs[formActs.length-1].to:bgEndAt;
+ detailStartAt=detailActs.length?detailActs[0].from:formsEndAt;
+ actions=[...bgActs,...formActs,...detailActs];
+}
+function modelStroke(context,s,left,right,count){
+ if(s.kind==='background')return;
+ const p0=s.pts[0],p1=s.pts[Math.min(s.pts.length-1,count)],mx=(p0[0]+p1[0])*.5,my=(p0[1]+p1[1])*.5;
+ const shadow=context.createLinearGradient(p0[0]+s.width*.12,p0[1]+s.width*.12,p1[0]+s.width*.18,p1[1]+s.width*.18);
+ const shadowCol=deepen(s.blend||s.color,s.kind==='detail'?.18:.34);
+ shadow.addColorStop(0,rgb(shadowCol,0));
+ shadow.addColorStop(.26,rgb(shadowCol,s.kind==='detail'?.04:.10));
+ shadow.addColorStop(.72,rgb(shadowCol,s.kind==='detail'?.06:.14));
+ shadow.addColorStop(1,rgb(shadowCol,0));
+ context.save();
+ context.filter=`blur(${s.kind==='detail'?1.4:Math.max(4,Math.min(18,s.width*.12))}px)`;
+ context.fillStyle=shadow;
+ context.beginPath();
+ context.moveTo(left[0][0]+s.width*.05,left[0][1]+s.width*.05);
+ for(let i=0;i<left.length-1;i++){
+  const a=left[i],b=left[i+1];
+  context.quadraticCurveTo(a[0]+s.width*.05,a[1]+s.width*.05,(a[0]+b[0])*.5+s.width*.05,(a[1]+b[1])*.5+s.width*.05);
+ }
+ context.lineTo(right[right.length-1][0]+s.width*.04,right[right.length-1][1]+s.width*.04);
+ for(let i=right.length-1;i>0;i--){
+  const a=right[i],b=right[i-1];
+  context.quadraticCurveTo(a[0]+s.width*.04,a[1]+s.width*.04,(a[0]+b[0])*.5+s.width*.04,(a[1]+b[1])*.5+s.width*.04);
+ }
+ context.closePath();
+ context.fill();
+ context.restore();
+}
+function paintRibbon(context,s,pointLimit){
+ const count=Math.max(1,Math.min(s.pts.length-1,pointLimit));
+ if(count<1)return;
+ const left=[],right=[];
+ for(let i=0;i<=count;i++){
+  const p=s.pts[i];
+  const prev=s.pts[Math.max(0,i-1)],next=s.pts[Math.min(s.pts.length-1,i+1)];
+  const dx=next[0]-prev[0],dy=next[1]-prev[1],ll=Math.hypot(dx,dy)||1;
+  const nx=-dy/ll,ny=dx/ll;
+  const t=i/(s.pts.length-1);
+  const pressure=strokePressure(t,s.pressure);
+  // Una sola silueta viva; la presion gradua el ancho en todo su recorrido.
+  let width=s.width*pressure*.5;
+  if(s.kind==='detail' && s.taperMode){
+    const taper = s.taperMode==='startHeavy' ? lerp(1.20,.20,t) : lerp(.20,1.20,t);
+    width*=taper;
+  }
+  left.push([p[0]+nx*width,p[1]+ny*width]);
+  right.push([p[0]-nx*width,p[1]-ny*width]);
+ }
+ const path=()=>{
+  context.beginPath();
+  context.moveTo(left[0][0],left[0][1]);
+  for(let i=0;i<left.length-1;i++){
+   const a=left[i],b=left[i+1];
+   context.quadraticCurveTo(a[0],a[1],(a[0]+b[0])*.5,(a[1]+b[1])*.5);
+  }
+  const last=left[left.length-1];context.lineTo(last[0],last[1]);
+  context.lineTo(right[right.length-1][0],right[right.length-1][1]);
+  for(let i=right.length-1;i>0;i--){
+   const a=right[i],b=right[i-1];
+   context.quadraticCurveTo(a[0],a[1],(a[0]+b[0])*.5,(a[1]+b[1])*.5);
+  }
+  context.lineTo(right[0][0],right[0][1]);context.closePath();
+ };
+ context.save();
+ const p0=s.pts[0],p1=s.pts[s.pts.length-1];
+ const grad=context.createLinearGradient(p0[0],p0[1],p1[0]+.01,p1[1]+.01);
+ const midColor=s.blend?mix(s.color,s.blend,.34):s.color;
+ const darkBase=deepen(s.color,s.kind==='background'?.10:s.kind==='form'?.28:.22);
+ const deepShadow=deepen(s.blend||s.color,s.kind==='background'?.16:s.kind==='form'?.42:.30);
+ const lift=illuminate(s.blend||s.color,s.kind==='background'?.16:s.kind==='form'?.34:.24);
+ grad.addColorStop(0,rgb(deepShadow));
+ grad.addColorStop(.18,rgb(darkBase));
+ if(s.blend)grad.addColorStop(.38,rgb(midColor));
+ grad.addColorStop(.60,rgb(s.color));
+ grad.addColorStop(.82,rgb(lift));
+ grad.addColorStop(1,rgb(illuminate(lift,.10)));
+ // Borde húmedo / degradé: una primera pasada suave, luego el cuerpo del color.
+ const blur=s.kind==='background'?16:s.kind==='form'?Math.max(.15,Math.min(1,s.width*.02*(s.edgeSoft||.06))):Math.max(1.4,Math.min(13,s.width*.11*(s.edgeSoft||.7)));
+ if(s.kind!=='background')modelStroke(context,s,left,right,count);
+ context.globalAlpha=s.alpha*(s.kind==='detail'?.26:s.kind==='form'?.34:.22);
+ context.filter=`blur(${blur}px)`;
+ path();
+ context.fillStyle=grad;context.fill();
+ context.filter='none';
+ context.globalAlpha=s.alpha;
+ path();
+ context.fillStyle=grad;context.fill();
+ // Mezcla ligera de color, principalmente hacia los bordes y el centro de la pincelada.
+ if(s.blend){
+  context.globalAlpha=s.alpha*(s.kind==='detail'?.10:s.kind==='form'?.24:.16);
+  const grad2=context.createLinearGradient(p1[0],p1[1],p0[0]+.01,p0[1]+.01);
+  grad2.addColorStop(0,rgb(illuminate(s.blend,.24)));
+  grad2.addColorStop(.42,rgb(s.blend));
+  grad2.addColorStop(1,rgb(deepen(s.blend,.18)));
+  path();
+  context.fillStyle=grad2;context.fill();
+ }
+ // Luz interior suave para que no se vea plano.
+ if(s.kind!=='background'){
+  context.globalAlpha=s.alpha*(s.kind==='detail'?.08:s.kind==='form'?.16:.10);
+  const inner=context.createLinearGradient(p0[0]-s.width*.10,p0[1]-s.width*.10,p1[0]+s.width*.10,p1[1]+s.width*.10);
+  inner.addColorStop(0,rgb(illuminate(s.color,.22),0));
+  inner.addColorStop(.32,rgb(illuminate(s.color,.30),.10));
+  inner.addColorStop(.62,rgb(illuminate(s.blend||s.color,.38),.18));
+  inner.addColorStop(1,rgb(illuminate(s.blend||s.color,.18),0));
+  path();
+  context.fillStyle=inner;context.fill();
+ }
+ // La veta forma parte de la pintura, no añade grupos de pelos.
+ if(s.sheen&&s.width>11&&count>=5){
+  context.globalAlpha=s.alpha*.18;
+  context.strokeStyle=rgb(illuminate(s.blend||s.color,.41));
+  context.lineWidth=Math.max(.5,Math.min(2.2,s.width*.014));
+  context.lineCap='butt';
+  context.beginPath();
+  for(let i=2;i<=count;i++){
+   const a=s.pts[i-1],b=s.pts[i];
+   const dx=b[0]-a[0],dy=b[1]-a[1],ll=Math.hypot(dx,dy)||1;
+   const nx=-dy/ll,ny=dx/ll;
+   const ww=s.width*strokePressure(i/(s.pts.length-1),s.pressure)*.23;
+   const px=b[0]+nx*ww,py=b[1]+ny*ww;
+   if(i===2)context.moveTo(px,py); else context.lineTo(px,py);
+  }
+  context.stroke();
+ }
+ context.restore();
+}
+
+function strokeBounds(s){
+ let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+ for(let i=0;i<s.pts.length;i++){
+  const p=s.pts[i];
+  if(p[0]<minX)minX=p[0]; if(p[1]<minY)minY=p[1];
+  if(p[0]>maxX)maxX=p[0]; if(p[1]>maxY)maxY=p[1];
+ }
+ const pad=Math.max(12,s.width*.90);
+ return {x:clamp(minX-pad,0,W),y:clamp(minY-pad,0,H),w:clamp((maxX-minX)+pad*2,18,W),h:clamp((maxY-minY)+pad*2,18,H)};
+}
+function liquifyRegion(context,x,y,rw,rh,maxPct=.05){
+ // Igual idea del INFINITO original: remuestreo real de la pintura dentro de la región.
+ maxPct=Math.min(.13,Math.max(.004,maxPct));
+ let sx=Math.max(0,Math.floor(x*D)),sy=Math.max(0,Math.floor(y*D));
+ let sw=Math.min(baseLayer.width-sx,Math.floor(rw*D)),sh=Math.min(baseLayer.height-sy,Math.floor(rh*D));
+ if(sw<16||sh<16)return;
+ let src=context.getImageData(sx,sy,sw,sh),dst=context.createImageData(sw,sh);
+ let a=src.data,b=dst.data,amp=Math.min(sw,sh)*clamp(maxPct,.004,.13)*rand(.48,.82);
+ let horizontal=Math.random()<.5,sign=Math.random()<.5?-1:1;
+ let cx=sw*.5,cy=sh*.5,rx=sw*.5,ry=sh*.5;
+ const envX=new Float64Array(sw),envY=new Float64Array(sh);
+ const waveX=horizontal?null:new Float64Array(sw);
+ const waveY=horizontal?new Float64Array(sh):null;
+ const rhythmWave=.86;
+ for(let xx=0;xx<sw;xx++){
+   let nx=(xx-cx)/rx;
+   envX[xx]=Math.pow(Math.max(0,1-nx*nx),1.7);
+   if(!horizontal)waveX[xx]=Math.sin(nx*Math.PI*.82*rhythmWave+.45);
+ }
+ for(let yy=0;yy<sh;yy++){
+   let ny=(yy-cy)/ry;
+   envY[yy]=Math.pow(Math.max(0,1-ny*ny),1.7);
+   if(horizontal)waveY[yy]=Math.sin(ny*Math.PI*.82*rhythmWave+.45);
+ }
+ for(let yy=0;yy<sh;yy++)for(let xx=0;xx<sw;xx++){
+   let envelope=envX[xx]*envY[yy];
+   let wave=horizontal?waveY[yy]:waveX[xx];
+   let delta=sign*amp*envelope*wave;
+   let fx=clamp(xx-(horizontal?delta:0),0,sw-1),fy=clamp(yy-(horizontal?0:delta),0,sh-1);
+   let x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),tx=fx-x0,ty=fy-y0;
+   let k00=(y0*sw+x0)*4,k10=(y0*sw+x1)*4,k01=(y1*sw+x0)*4,k11=(y1*sw+x1)*4,j=(yy*sw+xx)*4;
+   for(let ch=0;ch<3;ch++){
+     let v0=a[k00+ch]*(1-tx)+a[k10+ch]*tx,v1=a[k01+ch]*(1-tx)+a[k11+ch]*tx;
+     b[j+ch]=v0*(1-ty)+v1*ty;
+   }
+   b[j+3]=255;
+ }
+ context.putImageData(dst,sx,sy);
+}
+function maybeLiquifyStroke(context,s,count){ return; }
+function expandRegionAroundStroke(s,minPct,maxPct){
+ const area=W*H, target=area*rand(minPct,maxPct), aspect=rand(.75,1.38);
+ let rw=Math.sqrt(target*aspect), rh=target/Math.max(rw,1);
+ const r=strokeBounds(s), cx=r.x+r.w*.5+rand(-r.w*.18,r.w*.18), cy=r.y+r.h*.5+rand(-r.h*.18,r.h*.18);
+ rw=Math.max(rw,r.w*1.2); rh=Math.max(rh,r.h*1.2);
+ return {x:clamp(cx-rw*.5,0,Math.max(0,W-rw)), y:clamp(cy-rh*.5,0,Math.max(0,H-rh)), w:Math.min(rw,W), h:Math.min(rh,H)};
+}
+function prepareLiquifyPlan(){
+ liquifyEvents=[];liquifyIndex=0;
+ if(bgEndAt>startAt){
+  const bgDur=bgEndAt-startAt;
+  liquifyEvents.push({time:startAt+bgDur*.24, phase:'bg'});
+  liquifyEvents.push({time:startAt+bgDur*.52, phase:'bg'});
+  liquifyEvents.push({time:startAt+bgDur*.78, phase:'bg'});
+  liquifyEvents.push({time:startAt+bgDur*.96, phase:'bg'});
+ }
+ const formCount=integer(16,26);
+ if(formsEndAt>bgEndAt){
+  const formDur=formsEndAt-bgEndAt;
+  for(let i=0;i<formCount;i++){
+   liquifyEvents.push({time:bgEndAt+formDur*((i+1)/(formCount+1)), phase:'form'});
+  }
+ }
+ const detailCount=integer(10,16);
+ if(finishAt>detailStartAt){
+  const detailDur=finishAt-detailStartAt;
+  for(let i=0;i<detailCount;i++){
+   liquifyEvents.push({time:detailStartAt+detailDur*((i+1)/(detailCount+1)), phase:'detail'});
+  }
+ }
+ liquifyEvents.sort((a,b)=>a.time-b.time);
+}
+function applyLiquifyEvent(phase){
+ if(phase==='bg' && bgPool.length){
+   const s=choose(bgPool), box=expandRegionAroundStroke(s,.20,.42), reps=integer(9,13);
+   for(let i=0;i<reps;i++) liquifyRegion(baseCtx,box.x,box.y,box.w,box.h,rand(.085,.145));
+ }else if(phase==='form' && formPool.length){
+   const s=choose(formPool), box=expandRegionAroundStroke(s,.16,.28), reps=integer(10,15);
+   for(let i=0;i<reps;i++) liquifyRegion(baseCtx,box.x,box.y,box.w,box.h,rand(.070,.125));
+ }else if(phase==='detail' && (detailPool.length||formPool.length)){
+   const pool=detailPool.length?detailPool:formPool, s=choose(pool), box=expandRegionAroundStroke(s,.12,.22), reps=integer(9,13);
+   for(let i=0;i<reps;i++) liquifyRegion(baseCtx,box.x,box.y,box.w,box.h,rand(.050,.095));
+ }
+ compositeBase();
+}
+function timedLiquify(now){
+ while(liquifyIndex<liquifyEvents.length && now>=liquifyEvents[liquifyIndex].time){
+   applyLiquifyEvent(liquifyEvents[liquifyIndex].phase);
+   liquifyIndex++;
+ }
+}
+function glazeStroke(context,s){
+ if(!s||s.kind!=='form'||s.width<34)return;
+ const p0=s.pts[0],p1=s.pts[s.pts.length-1];
+ const mid=s.pts[(s.pts.length/2)|0]||p0;
+ const alt=s.blend?mix(s.color,s.blend,.58):illuminate(s.color,.18);
+ const glaze=strokePoints(s.pts,s.width*rand(.78,1.06),alt,{
+   alpha:.05,blend:illuminate(alt,.18),edgeSoft:1.35,kind:'glaze',duration:.2,sheen:false,
+   in:rand(.08,.18),out:rand(.10,.20),wave:rand(.05,.14),flat:true
+ });
+ paintRibbon(context,glaze,glaze.pts.length-1);
+ if(chance(.72)){
+   const shadowTone=deepen(s.blend||s.color,rand(.18,.34));
+   const shadow=strokePoints(s.pts,s.width*rand(.72,.98),shadowTone,{alpha:rand(.035,.06),blend:deepen(shadowTone,.10),edgeSoft:1.46,kind:'glaze',duration:.2,sheen:false,in:rand(.10,.20),out:rand(.12,.22),wave:rand(.04,.12),flat:true});
+   paintRibbon(context,shadow,shadow.pts.length-1);
+ }
+ if(chance(.68)){
+   const softPath=makePath(mid[0]+rand(-s.width*.18,s.width*.18),mid[1]+rand(-s.width*.18,s.width*.18),rand(s.width*1.2,s.width*3.4),Math.atan2(p1[1]-p0[1],p1[0]-p0[0])+rand(-.55,.55),rand(.04,.12),integer(12,24),'flow');
+   const veil=strokePoints(softPath,rand(s.width*.18,s.width*.42),illuminate(alt,.08),{alpha:.05,blend:alt,edgeSoft:1.5,kind:'glaze',duration:.2,sheen:false,flat:true});
+   paintRibbon(context,veil,veil.pts.length-1);
+ }
+}
+function compositeBase(){
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(baseLayer,0,0);ctx.restore();
+}
+function paintTo(now){
+ // La base guarda los gestos ya terminados. El trazo activo se dibuja entero
+ // hasta la posicion actual: sin divisiones, rayas ni cortes entre segmentos.
+ let changes=0;
+ while(actionIndex<actions.length && now>=actions[actionIndex].to && changes<300){
+  const s=actions[actionIndex].stroke;
+  paintRibbon(baseCtx,s,s.pts.length-1);
+  if(s.kind==='form') liquifyFormStroke(baseCtx,s);
+  if(s.kind==='detail' && !s.noAutoLiquify) liquifyEveryDetail(baseCtx,s);
+  completed++;
+  if(s.kind==='background'){
+    bgPool.push(s); if(bgPool.length>36)bgPool.shift();
+  }else if(s.kind==='form'){
+    formPool.push(s); if(formPool.length>80)formPool.shift();
+    liquifyPool.push(s); if(liquifyPool.length>56)liquifyPool.shift();
+  }else if(s.kind==='detail'){
+    detailPool.push(s); if(detailPool.length>96)detailPool.shift();
+  }
+  actionIndex++;changes++;
+ }
+ compositeBase();
+ if(actionIndex<actions.length){
+  const a=actions[actionIndex];
+  if(now>=a.from){
+   const t=clamp01((now-a.from)/(a.to-a.from));
+   const upto=Math.floor((a.stroke.pts.length-1)*t);
+   if(upto>=1)paintRibbon(ctx,a.stroke,upto);
+  }
+ }
+}
+// Guardado automático: una sola carpeta seleccionada al abrir esta sesión.
+let outputDirectory=null;
+let saveQueue=Promise.resolve();
+let sessionStarted=false;
+const folderStart=document.getElementById('folderStart');
+const chooseFolder=document.getElementById('chooseFolder');
+const folderError=document.getElementById('folderError');
+async function ensureDirectoryPermission(){
+ if(!outputDirectory) return false;
+ try{
+   if(outputDirectory.queryPermission){
+     let state=await outputDirectory.queryPermission({mode:'readwrite'});
+     if(state==='granted') return true;
+     if(outputDirectory.requestPermission){
+       state=await outputDirectory.requestPermission({mode:'readwrite'});
+       return state==='granted';
+     }
+     return false;
+   }
+   return true;
+ }catch(e){
+   console.error('No se pudo comprobar el permiso de carpeta',e);
+   return false;
+ }
+}
+
+function queueFinishedPaintingSave(){
+ if(!outputDirectory)return;
+ // Captura primero la pintura acabada; así el reinicio no afecta al archivo.
+ const img=document.createElement('canvas');
+ const desired=4200;
+ const scale=Math.max(1,desired/Math.max(baseLayer.width,baseLayer.height));
+ img.width=Math.round(baseLayer.width*scale);
+ img.height=Math.round(baseLayer.height*scale);
+ const ic=img.getContext('2d',{alpha:false});
+ if(!ic)return;
+ ic.imageSmoothingEnabled=true;
+ ic.imageSmoothingQuality='high';
+ ic.drawImage(baseLayer,0,0,img.width,img.height);
+ const number=String(workNo).padStart(4,'0');
+ const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+ const filename=`ECUACION_CREATIVA_INFINITO_${number}_${stamp}.png`;
+ saveQueue=saveQueue.then(async()=>{
+   const allowed=await ensureDirectoryPermission();
+   if(!allowed) throw new Error('Sin permiso de escritura en la carpeta elegida');
+   const blob=await new Promise((resolve,reject)=>img.toBlob(b=>b?resolve(b):reject(new Error('No se pudo crear el PNG')),'image/png'));
+   const file=await outputDirectory.getFileHandle(filename,{create:true});
+   const writer=await file.createWritable();
+   try{await writer.write(blob);await writer.close(); folderError.textContent='';}
+   catch(e){try{await writer.abort();}catch(_){}throw e;}
+ }).catch(e=>{
+   console.error('No se pudo guardar automáticamente',filename,e);
+   folderError.textContent='No se pudo guardar una imagen. Haz clic en “Elegir carpeta” para restaurar el permiso de guardado.';
+   folderStart.hidden=false;
+ });
+}
+
+chooseFolder.addEventListener('click',async()=>{
+ if(typeof window.showDirectoryPicker!=='function'){
+   folderError.textContent='Para elegir una carpeta y guardar automáticamente, abre el HTML en Google Chrome o Microsoft Edge para computadora.';
+   return;
+ }
+ // El explorador solo permite mostrar este diálogo después de un clic del usuario.
+ try{
+   const selected=await window.showDirectoryPicker({id:'ecuacion-creativa-infinito',mode:'readwrite'});
+   outputDirectory=selected;
+   const allowed=await ensureDirectoryPermission();
+   if(!allowed) throw new Error('El navegador no concedió permiso de escritura a la carpeta.');
+   folderStart.hidden=true;
+   folderError.textContent='';
+   if(!sessionStarted){sessionStarted=true;resize();requestAnimationFrame(frame);}
+ }catch(e){
+   if(e && e.name==='AbortError')return;
+   folderError.textContent='No se pudo seleccionar la carpeta. Comprueba el permiso e inténtalo otra vez.';
+   console.error(e);
+ }
+});
+
+function resetWork(now=performance.now()){
+  workNo++;
+  preparePalette();prepareComposition();
+  ctx.setTransform(D,0,0,D,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  baseCtx.setTransform(D,0,0,D,0,0);baseCtx.imageSmoothingEnabled=true;
+  backgroundBase();compositeBase();actions=[];actionIndex=0;completed=0;liquifyPool=[];
+  bgPool=[];formPool=[];detailPool=[];liquifyEvents=[];liquifyIndex=0;
+  startAt=now;finishAt=now+rand(360000,540000);
+  holdAt=0;phase='paint';cycleCompleted=false;
+  buildBackground();buildMainForms();buildDetails();organizeActions();prepareLiquifyPlan();
+}
+function frame(now){
+ if(!paused){
+  if(phase==='hold'){
+    if(now-holdAt>=3000) resetWork(now);
+  }else{
+    paintTo(now);
+    timedLiquify(now);
+    if(!cycleCompleted && now>=finishAt){
+      paintTo(finishAt+4000);
+      phase='hold';
+      holdAt=now;
+      cycleCompleted=true;
+      queueFinishedPaintingSave();
+    }
+  }
+ }
+ requestAnimationFrame(frame);
+}
+function resize(){
+ const dw=Math.max(1,innerWidth),dh=Math.max(1,innerHeight);
+ // Proporciones libres y alta definición; misma presión proporcional en teléfono y pantalla grande.
+ W=1200;H=Math.max(540,Math.min(2100,1200*dh/dw));
+ const dpx=Math.min(Math.max(devicePixelRatio||1,1),2.2,Math.sqrt(6600000/(dw*dh)));
+ D=Math.max(.5,dw/W*dpx);
+ canvas.width=Math.max(1,Math.round(dw*dpx));
+ canvas.height=Math.max(1,Math.round(dh*dpx));
+ ctx.setTransform(D,0,0,D,0,0);
+ baseLayer.width=canvas.width;baseLayer.height=canvas.height;
+ resetWork(performance.now());
+}
+window.addEventListener('resize',()=>{clearTimeout(pendingResize);pendingResize=setTimeout(resize,180)},{passive:true});
+window.addEventListener('keydown',e=>{
+ if(e.key==='n'||e.key==='N'){paused=false;resetWork(performance.now())}
+ if(e.key==='p'||e.key==='P'||e.key===' '){paused=!paused;e.preventDefault()}
+});
+window.addEventListener('dblclick',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{})},{passive:true});
+// Versión pública del museo/website: ejecución automática, sin pedir carpeta ni guardar.
+folderStart.hidden=true;
+sessionStarted=true;
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
