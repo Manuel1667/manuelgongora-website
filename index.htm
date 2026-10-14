@@ -2718,4 +2718,32 @@ window.addEventListener('resize',setResponsiveArt);
   syncNewSeriesArtwork();
 })();
 </script>
+
+<script id="primer-impulso-click-ampliacion-reparada">
+/* Solo El primer impulso: clic directo y seguro sobre una obra para verla ampliada.
+   No modifica las galerías existentes, ni los dos programas INFINITO. */
+(function(){
+  const gallery=document.querySelector('#page-primer-impulso .primer-impulso-gallery');
+  if(!gallery) return;
+  gallery.addEventListener('click',function(e){
+    const item=e.target.closest('.ai-item');
+    if(!item || !gallery.contains(item)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    const items=[...gallery.querySelectorAll('.ai-item')];
+    const index=items.indexOf(item);
+    if(index<0) return;
+    // Mantiene el botón Atrás del navegador y la navegación existente del visor.
+    try{
+      history.pushState(
+        {gongoraRoute:true,gongoraView:'lightbox',parentView:'page-primer-impulso',itemIndex:index},
+        '',location.pathname+location.search+'#artwork'
+      );
+    }catch(err){/* Aun sin History API, la imagen debe poder abrirse. */}
+    // La imagen grande (1510 x 2048) ya está incorporada en data-full del index.
+    showLightboxFromItem(item,'page-primer-impulso',index);
+  },true);
+})();
+</script>
 </body></html>
