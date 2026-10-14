@@ -69,7 +69,7 @@ function hsl(h,s,l){
  const q=h<1?[C,X,0]:h<2?[X,C,0]:h<3?[0,C,X]:h<4?[0,X,C]:h<5?[X,0,C]:[C,0,X];
  return q.map(t=>(t+m)*255);
 }
-function pigment(h,s,l){return mix(hsl(h,s,l),hsl(h+180,s,l),.06)}
+function pigment(h,s,l){return mix(hsl(h,s,l),hsl(h+180,s,l),.03)}
 function illuminate(a,t){return mix(a,[247,237,220],clamp01(t))}
 function deepen(a,t){return mix(a,[34,27,44],clamp01(t))}
 function complement(a){return [255-a[0],255-a[1],255-a[2]]}
@@ -78,68 +78,47 @@ function vibrantComplement(a){
  return mix(c,illuminate(c,.10),.18);
 }
 function preparePalette(){
- const families=[
-  {name:'red',h:rand(350,10)},
-  {name:'violet',h:rand(262,282)},
-  {name:'purple',h:rand(286,310)},
-  {name:'green',h:rand(108,145)},
-  {name:'blue',h:rand(198,234)},
-  {name:'ochre',h:rand(36,52)},
-  {name:'caramel',h:rand(18,32)},
-  {name:'yellow',h:rand(52,66)}
+ // DONDE EL COLOR DESCANSA — cada nueva obra comienza con una familia cromática distinta.
+ // Rojos, amarillos y azules: 90% de la selección; verdes y violetas JUNTOS: 10%.
+ const primarias=[
+  {name:'red',h:rand(350,359)},
+  {name:'yellow',h:rand(45,59)},
+  {name:'blue',h:rand(200,225)}
  ];
- const picks=[];
- bgMode=choose(['light','medium','dark','mixed']);
- // Rojo siempre presente y reforzado, junto a fríos y cálidos.
- picks.push(families[0]);
- picks.push(chance(.5)?families[4]:(chance(.5)?families[1]:families[2]));
- picks.push(chance(.5)?families[5]:families[6]);
- while(picks.length<integer(5,7)){
-  const cand=choose(families);
-  if(!picks.includes(cand))picks.push(cand);
- }
- const toneForMode=()=>{
-  if(bgMode==='light') return rand(.48,.78);
-  if(bgMode==='medium') return rand(.28,.56);
-  if(bgMode==='dark') return rand(.12,.34);
-  return choose([rand(.14,.30),rand(.28,.50),rand(.48,.76)]);
+ const secundarias=[
+  {name:'green',h:rand(110,141)},
+  {name:'violet',h:rand(262,295)}
+ ];
+ const protagonista=choose(primarias);
+ const familia=()=>chance(.10)?choose(secundarias):(chance(.58)?protagonista:choose(primarias));
+ // Tonos medios y claros intensos, con oscuros solo ocasionales para el contraste.
+ // Ninguna luz cercana al blanco; no se preparan fondos casi negros.
+ const tono=()=>{
+  if(chance(.12))return rand(.25,.33);
+  if(chance(.56))return rand(.51,.68);
+  return rand(.35,.50);
  };
+ const pintura=(f,l=tono())=>pigment(f.h+rand(-8,8),rand(.78,.98),l);
+ bgMode=chance(.10)?'dark':chance(.46)?'light':chance(.52)?'medium':'mixed';
  bg=[];
- const redH=families[0].h;
- bg.push(pigment(redH+rand(-8,8),rand(.58,.92),bgMode==='light'?rand(.56,.78):bgMode==='medium'?rand(.34,.56):bgMode==='dark'?rand(.16,.32):choose([rand(.18,.32),rand(.34,.56),rand(.56,.76)])));
- bg.push(pigment(redH+rand(-10,10),rand(.50,.86),bgMode==='light'?rand(.44,.66):bgMode==='medium'?rand(.24,.46):bgMode==='dark'?rand(.12,.24):choose([rand(.16,.28),rand(.24,.46),rand(.44,.64)])));
- bg.push(pigment(redH+rand(-12,12),rand(.36,.72),rand(.12,.22)));
- for(let i=1;i<picks.length;i++){
-  const fh=picks[i].h;
-  bg.push(pigment(fh+rand(-14,14),rand(.40,.92),toneForMode()));
- }
- bg.push(pigment(choose(picks).h+rand(-10,10),rand(.30,.66),rand(.62,.84)));
- const darkA=mix(pigment(rand(350,15),.68,.20),pigment(rand(208,238),.62,.18),.52);
- const darkB=mix(pigment(rand(20,52),.66,.22),pigment(rand(265,305),.58,.18),.48);
- const nearBlack=mix(darkA,darkB,.50);
- bg.push(mix(nearBlack,choose(bg),.12));
+ // El primer color del lienzo es el protagonista: rojo, amarillo o azul.
+ bg.push(pintura(protagonista,rand(.40,.57)));
+ // Otros valores del mismo color para profundidad SIN convertirlo en gris.
+ bg.push(pintura(protagonista,rand(.54,.67)));
+ bg.push(pintura(protagonista,rand(.29,.39)));
+ for(let i=0;i<14;i++)bg.push(pintura(familia()));
+ // Las pinceladas y sus veladuras usan la misma regla cromática.
  accents=[];
- for(let i=0;i<Math.max(12,picks.length*3);i++){
-  const fam=i<3?families[0]:picks[i%picks.length];
-  const base=choose(bg);
-  const vivid=pigment(fam.h+rand(-24,24),rand(.56,.98),rand(.26,.78));
-  accents.push(
-    chance(.24)?vibrantComplement(base):
-    chance(.28)?illuminate(vivid,rand(.12,.34)):
-    chance(.18)?deepen(vivid,rand(.12,.28)):
-    mix(vivid,base,rand(.04,.18))
-  );
- }
+ for(let i=0;i<22;i++)accents.push(pintura(familia()));
+ // Color de detalles derivado de la misma paleta, sin complementarios puros.
  detailPalette=[];
- const dominant=[...bg.slice(0,Math.min(6,bg.length)),...accents.slice(0,Math.min(8,accents.length))];
- for(const col of dominant){
-   const c=vibrantComplement(col);
-   detailPalette.push(c);
-   detailPalette.push(illuminate(c,rand(.08,.24)));
-   detailPalette.push(mix(c,choose(accents),rand(.10,.24)));
+ for(const c of [...bg.slice(0,8),...accents.slice(0,12)]){
+  detailPalette.push(c);
+  detailPalette.push(mix(c,choose(accents),rand(.04,.12)));
  }
- colorMood=redH;
+ colorMood=protagonista.h;
 }
+
 function paintPoint(x,y,t){
  const a=composition.angle,c=composition.centerX,d=composition.centerY;
  const v=composition.extent*t;
@@ -153,11 +132,12 @@ function prepareComposition(){
  };
 }
 function backgroundBase(){
- // Base inicial con atmósfera y profundidad, nunca plana.
- const base=mix(bg[0],deepen(bg[bg.length-1],.18),.35);
+ // Arranque de color saturado, sin ennegrecer ni grisear el pigmento protagonista.
+ const base=bg[0];
  baseCtx.fillStyle=rgb(base);baseCtx.fillRect(0,0,W,H);
  atmosphereVeil(baseCtx);
 }
+
 function atmosphereVeil(context){
  // Velos grandes, claros y oscuros, para dar profundidad y misterio desde el fondo.
  for(let i=0;i<4;i++){
@@ -234,8 +214,8 @@ function buildBackground(){
   else if(side===2){ x=rand(-W*.18,W*1.18); y=H*1.14; angle=rand(3.3,6.0); }
   else if(side===3){ x=-W*.14; y=rand(-H*.18,H*1.18); angle=rand(-1.0,1.2); }
   else { x=rand(W*.10,W*.90); y=rand(H*.10,H*.90); angle=rand(-Math.PI,Math.PI); }
-  const baseCol=Math.random()<.38?choose(bg.slice(0,3)):chance(.22)?choose(accents):choose(bg);
-  const blendCol=chance(.35)?mix(baseCol,choose(detailPalette),rand(.12,.26)):mix(baseCol,choose(bg),rand(.18,.44));
+  const baseCol=chance(.55)?choose(bg):choose(accents);
+  const blendCol=mix(baseCol,choose(bg),rand(.025,.075));
   const pts=makePath(x,y,Math.max(W,H)*rand(.48,1.12),angle,rand(.04,.16),integer(26,56),chance(.22)?'fold':'flow');
   const alphaRange=bgMode==='light'?[.14,.34]:bgMode==='medium'?[.16,.40]:bgMode==='dark'?[.20,.48]:[.14,.46];
   pushAction('bg',strokePoints(pts,rand(150,250),baseCol,{flat:true,alpha:rand(alphaRange[0],alphaRange[1]),blend:blendCol,edgeSoft:1.02,kind:'background',in:.04,out:.06,wave:rand(.08,.16),sheen:false,duration:rand(.42,.82)}));
@@ -243,9 +223,9 @@ function buildBackground(){
  // Veladuras largas con colores sorpresa para romper la monotonía.
  for(let i=0;i<integer(6,12);i++){
   const x=rand(W*.08,W*.92), y=rand(H*.08,H*.92), a=rand(-Math.PI,Math.PI);
-  const col=Math.random()<.34?choose(bg.slice(0,3)):chance(.30)?choose(detailPalette):chance(.34)?choose(accents):choose(bg);
+  const col=chance(.48)?choose(bg):choose(accents);
   const pts=makePath(x,y,rand(Math.min(W,H)*.44,Math.max(W,H)*.98),a,rand(.05,.18),integer(22,44),chance(.34)?'fold':'flow');
-  const blendCol=mix(col,chance(.50)?choose(bg):choose(accents),rand(.14,.38));
+  const blendCol=mix(col,choose(accents),rand(.025,.08));
   pushAction('bg',strokePoints(pts,rand(138,235),col,{alpha:rand(.10,.28),blend:blendCol,edgeSoft:1.06,kind:'background',in:.06,out:.09,wave:rand(.09,.18),flat:true,sheen:false,duration:rand(.42,.84)}));
  }
 }
