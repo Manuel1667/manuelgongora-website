@@ -3302,13 +3302,11 @@ function primerImpulsoImagenGrande(item){
     const idx=Number(item.dataset.primerFullIndex);
     if(!Number.isInteger(idx) || idx<0 || idx>=PRIMER_IMPULSO_WEBP_PARTES.length) return backup;
     if(PRIMER_IMPULSO_URLS.has(idx)) return PRIMER_IMPULSO_URLS.get(idx);
+    // Misma ruta interna que las miniaturas: data: funciona sin permitir URLs blob:.
     const base64=PRIMER_IMPULSO_WEBP_PARTES[idx].join('');
-    const binary=atob(base64);
-    const bytes=new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-    const url=URL.createObjectURL(new Blob([bytes],{type:'image/webp'}));
-    PRIMER_IMPULSO_URLS.set(idx,url);
-    return url;
+    const src='data:image/webp;base64,'+base64;
+    PRIMER_IMPULSO_URLS.set(idx,src);
+    return src;
   }catch(err){
     console.error('No se pudo ampliar El primer impulso',err);
     return backup;
