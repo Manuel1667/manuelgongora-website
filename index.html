@@ -1565,6 +1565,41 @@ body:has(#page-primer-impulso.open) .global-menu{visibility:hidden!important;}
   #page-primer-impulso .primer-impulso-live-caption{font-size:14px;line-height:1.38;}
 }
 </style>
+
+<style id="creative-equation-infinito-only">
+/* Únicamente la obra viva de Ecuación Creativa. No cambia otras series. */
+#page-ecuacion .creative-equation-live{
+  width:min(86.108vw,1657px);max-width:calc(100vw - 24px);
+  margin:10px 0 44px;position:relative;left:50%;transform:translateX(-50%);
+}
+#page-ecuacion .creative-equation-live-screen{
+  aspect-ratio:2.35/1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(18px,3.1vw,60px);background:#fff;align-items:stretch;
+}
+#page-ecuacion .creative-equation-live-screen iframe{
+  display:block;width:100%;height:100%;min-width:0;
+  border:2px solid rgba(128,128,128,.5);box-sizing:border-box;
+  background:#fff;pointer-events:none;
+}
+#page-ecuacion .creative-equation-live-caption{
+  width:100%;margin-top:5px;padding-top:3px;
+  font:400 clamp(10px,1.15vw,18px)/1.3 Georgia,serif;text-align:left;
+}
+@media(max-width:1100px), (pointer:coarse){
+  #page-ecuacion .creative-equation-live{
+    width:94%;max-width:94%;margin:10px 0 28px;
+  }
+  #page-ecuacion .creative-equation-live-screen{
+    aspect-ratio:.735/1;display:block;
+  }
+  #page-ecuacion .creative-equation-live-screen iframe{
+    width:100%;height:100%;
+  }
+  #page-ecuacion #creative-equation-art2,
+  #page-ecuacion #creative-equation-art3{display:none!important;}
+  #page-ecuacion .creative-equation-live-caption{font-size:14px;line-height:1.38;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -2018,6 +2053,20 @@ Construído a partir de seus próprios parâmetros pictóricos — linha, gesto,
 <div class="series-page-title" data-en="Creative Equation" data-es="Ecuación Creativa" data-fr="Équation Créative" data-it="Equazione Creativa" data-pt="Equação Criativa">Creative Equation</div>
 <div class="series-subtitle" data-en="The search for the creating equation: harmony, balance, and the language of the universe in one visual formula." data-es="La búsqueda de la ecuación creadora: armonía, balance y lenguaje del universo en una misma fórmula visual." data-fr="La recherche de l’équation créatrice : harmonie, équilibre et langage de l’univers réunis dans une formule visuelle." data-it="La ricerca dell’equazione creatrice: armonia, equilibrio e linguaggio dell’universo in un’unica formula visiva." data-pt="A busca da equação criadora: harmonia, equilíbrio e a linguagem do universo em uma única fórmula visual.">The search for the creating equation: harmony, balance, and the language of the universe in one visual formula.</div>
 </div>
+</div>
+
+<div class="creative-equation-live" aria-label="Ecuación Creativa Infinito — Obra viva">
+  <div class="creative-equation-live-screen">
+    <iframe id="creative-equation-art1" title="Ecuación Creativa Infinito — obra viva 1" loading="lazy"></iframe>
+    <iframe id="creative-equation-art2" title="Ecuación Creativa Infinito — obra viva 2" loading="lazy"></iframe>
+    <iframe id="creative-equation-art3" title="Ecuación Creativa Infinito — obra viva 3" loading="lazy"></iframe>
+  </div>
+  <div class="creative-equation-live-caption"
+       data-en="Creative Equation Infinito: Where Color Rests. Living artwork by Manuel Góngora."
+       data-es="Ecuación Creativa Infinito: Donde el color descanza. Obra viva de Manuel Góngora."
+       data-fr="Équation Créative Infinito : Là où la couleur se repose. Œuvre vivante de Manuel Góngora."
+       data-it="Equazione Creativa Infinito: Dove il colore riposa. Opera vivente di Manuel Góngora."
+       data-pt="Equação Criativa Infinito: Onde a cor repousa. Obra viva de Manuel Góngora.">Creative Equation Infinito: Where Color Rests. Living artwork by Manuel Góngora.</div>
 </div>
 <div class="ai-gallery">
 <button class="ai-item" data-full="assets/artwork-7ea011b1cacb7e8a.png" data-parent-view="page-ecuacion" data-title="Encrypted Paradise" type="button">
@@ -2714,6 +2763,36 @@ window.addEventListener('resize',setResponsiveArt);
   new MutationObserver(syncNewSeriesArtwork).observe(page,{attributes:true,attributeFilter:['class']});
   window.addEventListener('resize',syncNewSeriesArtwork,{passive:true});
   syncNewSeriesArtwork();
+})();
+</script>
+
+<script id="creative-equation-infinito-only">
+/* Solo Ecuación Creativa: cargar su obra viva desde el HTML real en assets/. */
+(function(){
+  'use strict';
+  const page=document.getElementById('page-ecuacion');
+  if(!page)return;
+  const artPath='assets/ecuacion-creativa-infinito-donde-el-color-descansa.html';
+  const frames=[1,2,3].map(i=>document.getElementById('creative-equation-art'+i));
+  let activeCount=-1;
+  function syncCreativeEquationArtwork(){
+    const visible=page.classList.contains('open');
+    const oneScreen=window.matchMedia('(max-width:1100px), (pointer:coarse)').matches;
+    const wanted=visible?(oneScreen?1:3):0;
+    if(wanted===activeCount)return;
+    frames.forEach((frame,i)=>{
+      if(!frame)return;
+      if(i<wanted){
+        if(frame.getAttribute('src')!==artPath)frame.setAttribute('src',artPath);
+      }else{
+        if(frame.getAttribute('src')!=='about:blank')frame.setAttribute('src','about:blank');
+      }
+    });
+    activeCount=wanted;
+  }
+  new MutationObserver(syncCreativeEquationArtwork).observe(page,{attributes:true,attributeFilter:['class']});
+  window.addEventListener('resize',syncCreativeEquationArtwork,{passive:true});
+  syncCreativeEquationArtwork();
 })();
 </script>
 </body></html>
