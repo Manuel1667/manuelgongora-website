@@ -393,11 +393,13 @@ function twistedWhiteHumanoid(cx,cy,sc,rot,color='rgb(255,255,255)',mirror=1){
 
 function openingBlackHumanoids(){
  if(suppressHumanoidsThisWork){humanoidReplacementForms();return;}
- // Humanoides negros como MASAS de composición al comienzo: grandes, medianos o pequeños.
- // Son orgánicos y luego la propia pintura/filamentos/Liquify puede invadirlos y destruirlos parcialmente.
- let S=Math.min(W,H),count=R(2,6)|0;
+ // Menos repetición de humanoides: algunas obras no tienen ninguno, otras uno grande,
+ // otras uno o dos, y solo algunas llegan a tres, cuatro o cinco.
+ let S=Math.min(W,H),count=pick([0,1,1,1,2,2,2,3,3,4,5]);
+ if(count===0){if(Math.random()<.70)humanoidReplacementForms();return;}
  for(let i=0;i<count;i++){
-   let sizeBand=pick(['large','large','large','medium','medium','small']),sc=sizeBand==='large'?R(S*.22,S*.38):sizeBand==='medium'?R(S*.12,S*.22):R(S*.065,S*.13);
+   let sizeBand=count===1?pick(['large','large','medium']):pick(['large','large','medium','medium','small','small']);
+   let sc=sizeBand==='large'?R(S*.22,S*.38):sizeBand==='medium'?R(S*.12,S*.22):R(S*.065,S*.13);
    let cx=R(W*.10,W*.90),cy=R(H*.16,H*.84),rot=R(-1.15,1.15),mirror=Math.random()<.5?-1:1;
    if(Math.random()<mysticCultureShareThisWork) organicMysticCultureSymbol();
    else twistedWhiteHumanoid(cx,cy,sc,rot,`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,mirror);
@@ -641,9 +643,10 @@ function conceptualHairForm(){
 }
 function hairCloud(){
  let z=pick(zones),S=Math.min(W,H),groups=Math.max(1,Math.round((R(6.4,11.2)|0)*.60*1.92*1.75)); // +50% pelo sobre la versión anterior
+ let usableMasses=massAreas.filter(massAreaIsUsable);
  for(let k=0;k<groups;k++){
-  let overBlack=massAreas.length&&Math.random()<.84;
-  let cx,cy;if(overBlack){let m=pick(massAreas);cx=R(m.x,m.x+m.w);cy=R(m.y,m.y+m.h)}else{[cx,cy]=pt(z,.68)}
+  let overBlack=usableMasses.length&&Math.random()<.86;
+  let cx,cy;if(overBlack){let m=pick(usableMasses);cx=R(m.x,m.x+m.w);cy=R(m.y,m.y+m.h)}else{[cx,cy]=pt(z,.68)}
   let mode=Math.random(),base=R(-Math.PI,Math.PI),turn=0,n=Math.max(1,Math.round((R(overBlack?45:30,overBlack?83:61)|0)*.60*1.92*1.75)),L=(Math.random()<.42?R(S*.38,Math.max(W,H)*1.10):R(S*.12,S*.48)),pending=n;
   let minx=W,maxx=0,miny=H,maxy=0;
   if(mode<.42){base=R(-2.75,-.38);turn=(Math.random()<.5?-1:1)*R(.015,.040)}
@@ -697,7 +700,48 @@ function wholeWorkLiquify(){let pads=[[0,0,W,H],[0,0,W*.55,H*.55],[W*.45,0,W*.55
 // Liquify: deformación del dibujo existente, nunca supera 5% de la dimensión del área afectada.
 function liquify(maxPct=.06){if(!zones.length)return;let z=pick(zones),rw=clamp(W*z.rx*3,110,W*.7),rh=clamp(H*z.ry*3,110,H*.7);liquifyRegion(clamp(W*z.x-rw/2,0,W-rw),clamp(H*z.y-rh/2,0,H-rh),rw,rh,maxPct)}
 function spatialTension(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW)return;if(performance.now()-safeWorkStartedAt>=15000*EXECUTION_SLOW)return;if(!zones.length)return;let heavy=pick(zones),ox=1-heavy.x,oy=1-heavy.y,z={x:clamp(ox+R(-.10,.10),.05,.95),y:clamp(oy+R(-.10,.10),.05,.95),rx:.05,ry:.05,dir:R(-Math.PI,Math.PI)};filament(z,R(.35,.75));if(Math.random()<.45)filament(z,R(.25,.55))}
-function gesture(){if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW){hairCloud();return;}if(landscapeWork&&!landscapeDone&&actionsDone>18){landscapeDone=true;horizonLandscape();return}let r=Math.random();if(profile.planes>0&&Math.random()<.055){if(Math.random()<.72){continuousElement();}else{(void 0);}profile.planes--}else if(profile.connectors>0&&Math.random()<.13){connector();profile.connectors--}else if(profile.mechanical>0&&Math.random()<.06){Math.random()<.45?continuousElement():/* mechanical faces/elements disabled */profile.mechanical--}else if(profile.human>0&&Math.random()<.06){if(Math.random()<.55){continuousElement();}else{(void 0);}profile.human--}else if(r<.12)filament();else if(r<.24)tangledField();else if(r<.72)hairCloud();else if(r<.88)continuousElement();else if(r<.93)(void 0);else sweep();if(Math.random()<.08)spatialTension();if(actionsDone>25&&Math.random()<.002)rareSpine();}
+function massAreaIsUsable(m){
+ if(!m)return false;
+ let frac=(m.w*m.h)/Math.max(1,W*H),ar=m.w/Math.max(1,m.h);
+ return frac>=.008&&frac<=.72&&ar>=.40&&ar<=2.50;
+}
+function pruneMassAreas(){
+ if(!massAreas||!massAreas.length)return;
+ massAreas=massAreas.filter(m=>massAreaIsUsable(m));
+ if(massAreas.length>8)massAreas=massAreas.slice(-8);
+}
+function gesture(){
+ if(performance.now()-safeWorkStartedAt>=13000*EXECUTION_SLOW){pruneMassAreas();hairCloud();return;}
+ pruneMassAreas();
+ if(landscapeWork&&!landscapeDone&&actionsDone>18){landscapeDone=true;horizonLandscape();return}
+ let total=Math.max(1,finishAt-started),progress=clamp((performance.now()-started)/total,0,1);
+ // Las masas grandes deben nacer al principio. Desde la mitad en adelante,
+ // la obra respira con pelo, filamento y conexiones, no con masas nuevas.
+ if(progress>.46){
+   let r=Math.random();
+   if(profile.connectors>0&&Math.random()<.11){connector();profile.connectors--;}
+   else if(r<.18)filament();
+   else if(r<.38)tangledField();
+   else if(r<.94)hairCloud();
+   else sweep();
+   if(Math.random()<.06)spatialTension();
+   if(actionsDone>25&&Math.random()<.0015)rareSpine();
+   return;
+ }
+ let r=Math.random();
+ if(profile.planes>0&&Math.random()<.055){if(Math.random()<.72){continuousElement();}else{(void 0);}profile.planes--;}
+ else if(profile.connectors>0&&Math.random()<.13){connector();profile.connectors--;}
+ else if(profile.mechanical>0&&Math.random()<.06){Math.random()<.45?continuousElement():/* mechanical faces/elements disabled */profile.mechanical--;}
+ else if(profile.human>0&&Math.random()<.06){if(Math.random()<.55){continuousElement();}else{(void 0);}profile.human--;}
+ else if(r<.12)filament();
+ else if(r<.24)tangledField();
+ else if(r<.72)hairCloud();
+ else if(r<.88)continuousElement();
+ else if(r<.93)(void 0);
+ else sweep();
+ if(Math.random()<.08)spatialTension();
+ if(actionsDone>25&&Math.random()<.002)rareSpine();
+}
 function rareSpine(){return;}
 
 let finalDetailsDone=false;
@@ -733,10 +777,12 @@ function ensureBlackBalance35(){if(blackBalanceDone)return;blackBalanceDone=true
 let spermTargetThisWork=1,fenceTargetThisWork=1,fenceCount=0,personalSealWork=false,personalSealCount=0,personalSealsDone=false;
 let pickaxeSurpriseWork=false,pickaxeSurpriseDone=false,earlyRootClusterWork=false,earlyRootClusterDone=false,earlyRootClusterAt=0;
 function extraHairOnBlackForms(){
+ pruneMassAreas();
  if(!massAreas.length)return;
- let S=Math.min(W,H),count=Math.min(massAreas.length,R(4,8)|0);
+ let usableMasses=massAreas.filter(massAreaIsUsable);if(!usableMasses.length)return;
+ let S=Math.min(W,H),count=Math.min(usableMasses.length,R(5,9)|0);
  for(let q=0;q<count;q++){
-   let m=pick(massAreas),n=R(52,92)|0;
+   let m=pick(usableMasses),n=R(56,96)|0;
    for(let i=0;i<n;i++){
      let x=R(m.x,m.x+m.w),y=R(m.y,m.y+m.h),a=R(-Math.PI,Math.PI);
      let lengthClass=Math.random(),L=lengthClass<.34?R(S*.025,S*.075):lengthClass<.72?R(S*.075,S*.18):R(S*.18,S*.34);
@@ -788,9 +834,11 @@ function paintReferenceDenseHairImmediate(m){
  g.restore();
 }
 function ensureDenseHairOnEveryBlackArea35(){
+ pruneMassAreas();
  if(!denseBlackHairWork||denseBlackHairDone||!massAreas.length)return;
  denseBlackHairDone=true;
- let S=Math.min(W,H),areas=massAreas.slice();
+ let S=Math.min(W,H),areas=massAreas.filter(massAreaIsUsable);
+ if(!areas.length)return;
  for(let ai=0;ai<areas.length;ai++){
    let m=areas[ai];
    // Todas las formas negras salvo los humanoides terminan en puntas orgánicas.
@@ -1242,7 +1290,7 @@ function cornerSpineSeal(){
  }
 }
 
-function beginWork(){if(typeof autographCanvas!=='undefined')autographCanvas.style.display='none';signatureCompletedThisWork=false;mysticCultureShareThisWork=R(.30,.40);mysticSymbolGuaranteedDone=false;cornerSpineWork=Math.random()<R(.07,.08);cornerSpineDone=false;pickaxeSurpriseWork=Math.random()<R(.03,.05);pickaxeSurpriseDone=false;earlyRootClusterWork=Math.random()<.25;earlyRootClusterDone=false;earlyRootClusterAt=R(1800,12000);suppressHumanoidsThisWork=Math.random()<R(.05,.15);neuralCircuitWork=Math.random()<.50;giantHumanoidThisWork=!suppressHumanoidsThisWork&&Math.random()<.05;giantHumanoidDrawn=false;whiteFormTarget=R(9,13)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(2,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;denseBlackHairWork=true;denseBlackHairDone=false;denseBlackHairFinalDone=false;pointedBlackMasses=new WeakSet();extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealWork=true;personalSealCount=R(1,4)|0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];{let rp=Math.random();if(rp<.18){tempo=R(1.7,2.8);thinkingPace=R(.22,.34);liquifyRhythm='slow';}else if(rp<.48){tempo=R(3.0,4.8);thinkingPace=R(.34,.50);liquifyRhythm='medium';}else if(rp<.80){tempo=R(5.0,7.4);thinkingPace=R(.50,.72);liquifyRhythm='fast';}else{tempo=R(7.8,11.5);thinkingPace=R(.72,.96);liquifyRhythm='veryFast';}}nextThoughtShift=started+R(1800,6500)*EXECUTION_SLOW;nextTempoShift=started+R(3500,13000)*EXECUTION_SLOW;nextAction=started+R(0,70)*EXECUTION_SLOW;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(1,3)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(25000,35000);let dur=finishAt-started;
+function beginWork(){if(typeof autographCanvas!=='undefined')autographCanvas.style.display='none';signatureCompletedThisWork=false;mysticCultureShareThisWork=R(.30,.40);mysticSymbolGuaranteedDone=false;cornerSpineWork=Math.random()<R(.07,.08);cornerSpineDone=false;pickaxeSurpriseWork=Math.random()<R(.03,.05);pickaxeSurpriseDone=false;earlyRootClusterWork=Math.random()<.25;earlyRootClusterDone=false;earlyRootClusterAt=R(1800,12000);suppressHumanoidsThisWork=Math.random()<R(.22,.32);neuralCircuitWork=Math.random()<.50;giantHumanoidThisWork=!suppressHumanoidsThisWork&&Math.random()<.035;giantHumanoidDrawn=false;whiteFormTarget=R(9,13)|0;whiteFormCount=0;finalWhiteFormDone=false;finalWhiteFormsTarget=R(2,4)|0;exactTridentWork=false;exactTridentTarget=0;exactTridentCount=0;finalBlackBrushChance=.02;crossThisWork=Math.random()<.25;daggerCountThisWork=1;spermTargetThisWork=R(1,4)|0;fenceTargetThisWork=R(1,4)|0;fenceCount=0;guaranteedDaggerDrawn=false;safeWorkStartedAt=performance.now();allowHugeCentralMass=Math.random()<.15;spermCount=0;finalSealLiquifyRegions=[];finalLiquifyPhase=false;if(typeof finishWork==='function')finishWork._liquified=false;workNo++;denseBlackHairWork=true;denseBlackHairDone=false;denseBlackHairFinalDone=false;pointedBlackMasses=new WeakSet();extraBlackHairDone=false;balanceDetailDone=false;blackBalanceDone=false;crossDaggerDone=false;otherSealWindowDone=false;otherSealAt=R(1200,2200);personalSealWork=true;personalSealCount=R(1,4)|0;personalSealsDone=false;daggerThisWork=false;fenceThisWork=false;spermThisWork=false;crossThisWork=false;blackBalanceDone=true;diabolicTipsThisWork=Math.random()<.40;rareWhiteFrameThisWork=Math.random()<.03;fenceDrawn=false;finalCrossDrawn=false;finalDetailsDone=false;exactSealDone=false;topSealKinds=[];artistPauseUntil=0;artistPauseCount=0;dominantLargeWork=allowHugeCentralMass;clawWork=Math.random()<.60;chooseBg();fillBg();profile=chooseProfile();profile.planes=Math.max(profile.planes,Math.random()<.7?(R(1,4)|0):0);profile.connectors=Math.max(profile.connectors,R(1,4)|0);buildZones();started=performance.now();phase='paint';actionsDone=0;strokeQueue=[];{let rp=Math.random();if(rp<.18){tempo=R(1.7,2.8);thinkingPace=R(.22,.34);liquifyRhythm='slow';}else if(rp<.48){tempo=R(3.0,4.8);thinkingPace=R(.34,.50);liquifyRhythm='medium';}else if(rp<.80){tempo=R(5.0,7.4);thinkingPace=R(.50,.72);liquifyRhythm='fast';}else{tempo=R(7.8,11.5);thinkingPace=R(.72,.96);liquifyRhythm='veryFast';}}nextThoughtShift=started+R(1800,6500)*EXECUTION_SLOW;nextTempoShift=started+R(3500,13000)*EXECUTION_SLOW;nextAction=started+R(0,70)*EXECUTION_SLOW;maturity=0;minActions=Math.round(R(145,220)*profile.density);maxActions=Math.round(R(240,360)*profile.density);baseQueued=false,strokesSinceLiquify=0,nextLiquifyAt=R(1,3)|0,massAreas=[];monolithicPlaneWork=Math.random()<.225;landscapeWork=Math.random()<.08;landscapeDone=false;finishAt=started+R(25000,35000);let dur=finishAt-started;
 artistPauseTarget=0;pauseMarks=[];queueInitialBase();if(Math.random()<.86||suppressHumanoidsThisWork)openingBlackHumanoids();if(neuralCircuitWork){let neuralBurst=R(3,7)|0;for(let nc=0;nc<neuralBurst;nc++)organicNeuralCircuitForm();}if(giantHumanoidThisWork&&!giantHumanoidDrawn){giantHumanoidDrawn=true;let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.22,W*.78),R(H*.25,H*.75),R(S*.45,S*.70),R(-.75,.75),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}if(dominantLargeWork)if(allowHugeCentralMass)dominantBlackForm();else paintedMass();else if(monolithicPlaneWork)if(allowHugeCentralMass)monolithicBlackPlane();else paintedMass();}
 function compositionMature(now){
  // Cierre directo: no se aplica ningún Liquify adicional al terminar la obra.
@@ -1464,7 +1512,7 @@ if(pickaxeSurpriseWork&&!pickaxeSurpriseDone&&elapsed>=R(900,6500)&&elapsed<1350
 if(earlyRootClusterWork&&!earlyRootClusterDone&&elapsed>=earlyRootClusterAt&&elapsed<13500){earlyRootClusterDone=true;earlyRootCrossCluster();}
 if(elapsed<Math.min(totalDur-2200,(totalDur+5000)*.50)&&massAreas.length&&whiteFormCount<whiteFormTarget&&Math.random()<.085){whiteThroughBlack(pick(massAreas),true,false);}
 // Humanoides negros pueden aparecer durante el 75% inicial de la obra.
-if(elapsed<totalDur*.75&&Math.random()<.018){if(suppressHumanoidsThisWork){if(Math.random()<.35)humanoidReplacementForms();}else if(Math.random()<mysticCultureShareThisWork){organicMysticCultureSymbol();}else{let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.10,W*.90),R(H*.15,H*.85),R(S*.07,S*.25),R(-1.15,1.15),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}}
+if(elapsed<totalDur*.75&&Math.random()<.010){if(suppressHumanoidsThisWork){if(Math.random()<.28)humanoidReplacementForms();}else if(Math.random()<mysticCultureShareThisWork){organicMysticCultureSymbol();}else{let S=Math.min(W,H);twistedWhiteHumanoid(R(W*.10,W*.90),R(H*.15,H*.85),R(S*.07,S*.22),R(-1.15,1.15),`rgb(${R(0,8)|0},${R(0,8)|0},${R(0,8)|0})`,Math.random()<.5?-1:1);}}
 if(cornerSpineWork&&!cornerSpineDone&&remain<=3200){cornerSpineDone=true;cornerSpineSeal();}
 if(!personalSealsDone&&remain<=2100){
  strokeQueue=[];drawPersonalFinalSeals();
