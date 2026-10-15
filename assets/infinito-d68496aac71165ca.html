@@ -1307,7 +1307,7 @@ function chooseSignatureColor(width,height){
  const lum=avg[0]*.2126+avg[1]*.7152+avg[2]*.0722;
  // Base: firma cercana al 80% negro. Si el fondo medio del rincón ya es oscuro o gris,
  // el brillo general sube para que la firma arranque visible desde el primer trazo.
- const black=R(.75,.80);
+ const black=.80;
  signatureDarkValue=Math.round(255*(1-black));
  signatureLightValue=248;
  if(lum<165){
@@ -1315,6 +1315,10 @@ function chooseSignatureColor(width,height){
  }
  return {color:[signatureDarkValue,signatureDarkValue,signatureDarkValue],glow:'rgba(8,8,8,.34)'};
 }
+// La firma original del video se pinta en una SOLA pasada, sin halos ni sombras.
+// Cada zona oscura o gris recibe blanco; las zonas claras conservan el negro 80%.
+const signatureContrastCanvas=document.createElement('canvas');
+const signatureContrastCtx=signatureContrastCanvas.getContext('2d',{willReadFrequently:true});
 function tintSignatureImage(img,color,width,height,x,y){
  const sw=Math.max(8,Math.round(width*D));
  const sh=Math.max(8,Math.round(height*D));
@@ -1325,21 +1329,30 @@ function tintSignatureImage(img,color,width,height,x,y){
  signatureDisplayCtx.clearRect(0,0,sw,sh);
  signatureDisplayCtx.drawImage(img,0,0,sw,sh);
  const sig=signatureDisplayCtx.getImageData(0,0,sw,sh);
- const data=sig.data;
- const sx=Math.max(0,Math.floor(x*D));
- const sy=Math.max(0,Math.floor(y*D));
- const bg=g.getImageData(sx,sy,Math.min(sw,c.width-sx),Math.min(sh,c.height-sy)).data;
- const lightRGB=[signatureLightValue,signatureLightValue,signatureLightValue];
- const darkRGB=[signatureDarkValue,signatureDarkValue,signatureDarkValue];
- for(let i=0;i<data.length;i+=4){
-   if(data[i+3]===0)continue;
-   const br=bg[i]??255,bgG=bg[i+1]??255,bb=bg[i+2]??255;
-   const lum=br*.2126+bgG*.7152+bb*.0722;
-   // Si una letra cae sobre negro o gris medio, esa parte se invierte a blanco.
-   const rgb=lum<172?lightRGB:darkRGB;
-   data[i]=rgb[0];
-   data[i+1]=rgb[1];
-   data[i+2]=rgb[2];
+ const pixels=sig.data;
+ // Muestreo suavizado: no se alterna negro/blanco por cada punto de textura.
+ // Así una letra sobre una mancha gris se ve blanca sin engordarla.
+ const cell=3;
+ const cw=Math.max(1,Math.ceil(sw/cell));
+ const ch=Math.max(1,Math.ceil(sh/cell));
+ if(signatureContrastCanvas.width!==cw||signatureContrastCanvas.height!==ch){
+   signatureContrastCanvas.width=cw; signatureContrastCanvas.height=ch;
+ }
+ signatureContrastCtx.clearRect(0,0,cw,ch);
+ signatureContrastCtx.drawImage(c,x*D,y*D,sw,sh,0,0,cw,ch);
+ const backdrop=signatureContrastCtx.getImageData(0,0,cw,ch).data;
+ const dark=signatureDarkValue,light=255;
+ for(let py=0;py<sh;py++){
+   const sampleY=Math.min(ch-1,Math.floor(py/cell));
+   for(let px=0;px<sw;px++){
+     const i=(py*sw+px)*4;
+     if(pixels[i+3]===0)continue;
+     const sampleX=Math.min(cw-1,Math.floor(px/cell));
+     const j=(sampleY*cw+sampleX)*4;
+     const luminance=backdrop[j]*.2126+backdrop[j+1]*.7152+backdrop[j+2]*.0722;
+     const value=luminance<=197?light:dark;
+     pixels[i]=value; pixels[i+1]=value; pixels[i+2]=value;
+   }
  }
  signatureDisplayCtx.putImageData(sig,0,0);
  return signatureDisplayCanvas;
@@ -1350,7 +1363,7 @@ function startRealSignature(now){
  readyAutographLayer(); autographCanvas.style.display='block';
  // Variación gestual pequeña: 5–7 %, sin cambiar la letra ni convertirla en fuente.
  signatureVariant={width:R(.945,1.055),height:R(.945,1.055),shear:R(-.03,.03),tilt:R(-.02,.02)};
- const width=W*.13*signatureVariant.width;
+ const width=W*.104*signatureVariant.width;
  const height=width*(184/374)*signatureVariant.height;
  signatureCorner=chooseCleanSignatureCorner(width,height);
  const signedLook=chooseSignatureColor(width,height);
@@ -1364,7 +1377,7 @@ function drawRealSignature(now){
  const img=realSignatureImages[ix];
  if(!img.complete||!img.naturalWidth)return;
  readyAutographLayer();
- const width=W*.13*signatureVariant.width;
+ const width=W*.104*signatureVariant.width;
  const height=width*(184/374)*signatureVariant.height;
  const rect=signatureRectForCorner(signatureCorner,width,height);
  const x=rect.x,y=rect.y;
@@ -1372,12 +1385,9 @@ function drawRealSignature(now){
  autographCtx.save();
  autographCtx.translate(x+width*.5,y+height*.5);
  autographCtx.transform(1,signatureVariant.shear,signatureVariant.tilt,1,0,0);
- autographCtx.globalAlpha=.42;
- autographCtx.shadowColor=signatureGlow;
- autographCtx.shadowBlur=Math.max(10,width*.10);
- autographCtx.drawImage(tinted,-width*.5,-height*.5,width,height);
- autographCtx.globalAlpha=.98;
- autographCtx.shadowBlur=Math.max(3,width*.03);
+ autographCtx.globalAlpha=1;
+ autographCtx.shadowColor='transparent';
+ autographCtx.shadowBlur=0;
  autographCtx.drawImage(tinted,-width*.5,-height*.5,width,height);
  autographCtx.restore();
 }
