@@ -1148,7 +1148,7 @@ function resize(){
  // Proporciones libres y alta definición; misma presión proporcional en teléfono y pantalla grande.
  W=1200;H=Math.max(540,Math.min(2100,1200*dh/dw));
  const dpx=Math.min(Math.max(devicePixelRatio||1,1),2.2,Math.sqrt(6600000/(dw*dh)));
- D=Math.max(.5,dw/W*dpx);
+ D=dw/W*dpx;
  canvas.width=Math.max(1,Math.round(dw*dpx));
  canvas.height=Math.max(1,Math.round(dh*dpx));
  ctx.setTransform(D,0,0,D,0,0);
