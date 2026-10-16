@@ -30,7 +30,7 @@ h2{font:400 clamp(36px,5.4vw,78px)/.94 Georgia,serif;margin:0 0 42px}
 .card.series-link.active{background:#111;color:white} .card span{font-size:10px;letter-spacing:.18em} .card strong{font:400 21px Georgia,serif}
 .bio{max-width:900px;font:400 clamp(17px,1.8vw,27px)/1.35 Georgia,serif}
 footer{padding:40px clamp(20px,7vw,110px);border-top:1px solid var(--line);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
  header{grid-template-columns:45px 1fr 45px;padding:12px} .brand strong{font-size:28px} .brand small{font-size:8px}
  .menu{font-size:0;width:34px;height:28px;padding:0;border:0;border-radius:0;position:relative;background:linear-gradient(#111,#111) center/28px 1.5px no-repeat}.menu:before,.menu:after{content:'';position:absolute;left:3px;right:3px;height:1.5px;background:#111}.menu:before{top:6px}.menu:after{bottom:6px}
  .hero{min-height:auto;padding:76px 8px 22px} .box,.caption{width:94%} .screen{aspect-ratio:0.735/1}
@@ -38,7 +38,7 @@ footer{padding:40px clamp(20px,7vw,110px);border-top:1px solid var(--line);font-
 }
 @media(orientation:landscape) and (max-height:650px){.hero{padding-top:96px}.box,.caption{width:80vw}.screen{aspect-ratio:2.35/1}}
 
-@media(max-width:760px) and (orientation:portrait){
+@media (max-width:1100px) and (orientation:portrait){
  .screen{position:relative}
  .screen:after{content:'';position:absolute;inset:0;z-index:2;background:transparent;touch-action:pan-y}
  .kicker{margin-bottom:8px}
@@ -48,19 +48,19 @@ footer{padding:40px clamp(20px,7vw,110px);border-top:1px solid var(--line);font-
 }
 
 .bio-under-work{padding-top:34px!important;padding-bottom:42px!important}
-@media(max-width:760px) and (orientation:portrait){
+@media (max-width:1100px) and (orientation:portrait){
  .bio-under-work{padding-top:26px!important;padding-bottom:30px!important}
 }
 
 .bio-under-work h2{white-space:nowrap}
-@media(max-width:760px) and (orientation:portrait){
+@media (max-width:1100px) and (orientation:portrait){
  .bio-under-work h2{font-size:clamp(28px,10vw,44px);white-space:nowrap}
 }
 
 .bio-under-work{padding-top:17px!important}
 .bio-under-work .bio-inline{font-size:calc(clamp(17px,1.8vw,27px) + 2px)}
 .bio-under-work .bio-name{font-family:Georgia,serif;font-size:2em;font-weight:400;white-space:nowrap;margin-right:.45em}
-@media(max-width:760px) and (orientation:portrait){
+@media (max-width:1100px) and (orientation:portrait){
  .bio-under-work{padding-top:13px!important}
  .bio-under-work .bio-inline{font-size:19px}
  .bio-under-work .bio-name{font-size:2em}
@@ -154,7 +154,7 @@ footer{padding:40px clamp(20px,7vw,110px);border-top:1px solid var(--line);font-
 header{padding-top:22px!important;padding-bottom:8px!important}
 .brand{padding-top:12px!important;transform:translateY(6px)!important}
 .hero{padding-top:112px!important}
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .hero{padding-top:88px!important}
 }
 
@@ -196,7 +196,7 @@ header{padding-top:22px!important;padding-bottom:8px!important}
 @media(max-width:1000px){
   .ai-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .page-inner{padding:24px 16px 34px}
   .page-title{font-size:34px}
   .page-back{font-size:34px; top:0}
@@ -208,7 +208,7 @@ header{padding-top:22px!important;padding-bottom:8px!important}
 .lightbox-live{display:none;width:min(92vw,1450px);height:min(78vh,900px);border:0;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);}
 .lightbox.live-mode #lightbox-img{display:none;}
 .lightbox.live-mode .lightbox-live{display:block;}
-@media(max-width:760px){.ai-live-thumb{min-height:150px}.lightbox-live{width:88vw;height:70vh;}}
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){.ai-live-thumb{min-height:150px}.lightbox-live{width:88vw;height:70vh;}}
 
 /* Artwork lightbox */
 .lightbox{
@@ -263,7 +263,7 @@ header{padding-top:22px!important;padding-bottom:8px!important}
   min-height:55vh; display:grid; place-items:center; text-align:center;
   font:400 16px/1.45 Georgia,serif; color:#555;
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .series-page-inner{padding:24px 16px 34px}
   .series-page-title{font-size:34px}
   .series-page-back{font-size:34px;top:0}
@@ -349,7 +349,7 @@ header{padding-top:22px!important;padding-bottom:8px!important}
     color:#fff;
   }
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .paintings-series-card{
     grid-template-columns:1fr 42%;
     min-height:120px;
@@ -399,7 +399,7 @@ header{padding-top:22px!important;padding-bottom:8px!important}
   order:2!important;
 }
 
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .paintings-series-card{
     grid-template-columns:1fr 42%!important;
     min-height:120px!important;
@@ -426,7 +426,7 @@ header{padding-top:22px!important;padding-bottom:8px!important}
   border:2px solid rgba(128,128,128,.5) !important;
   box-sizing:border-box !important;
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .paintings-series-list{
     gap:20px !important;
   }
@@ -481,7 +481,7 @@ html[lang="es"] .series-page::after,
 html[lang="es"] .page-overlay::after{
   content:"Todos los derechos son reservados © Copyright 2018–2026";
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .paintings-series-name{gap:7px!important}
   .paintings-series-title{font-size:24px!important}
   .series-page::after,
@@ -542,13 +542,13 @@ nav#nav .nav-lang{
   grid-template-columns:repeat(5,minmax(0,1fr))!important;
   gap:28px 20px!important;
 }
-@media(max-width:1100px) and (min-width:761px){
+@media (max-width:1100px) and (min-width:761px) and (orientation:landscape){
   .ai-gallery,
   .artwork-gallery{
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   nav#nav{
     top:62px!important;
     right:12px!important;
@@ -642,7 +642,7 @@ nav#nav .nav-lang{
   color:#111;
   padding:0 8px;
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .series-page .page-inner{padding:24px 16px 34px}
   .series-page .page-title{font-size:34px}
   .series-page .page-back{font-size:34px;top:0}
@@ -688,7 +688,7 @@ nav#nav .nav-lang{
   font-style:italic;
   font-size:clamp(19px,1.8vw,25px);
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .biography-inner{padding:24px 20px 50px}
   .full-biography{margin-top:18px}
   .full-biography h1{margin-bottom:28px}
@@ -784,7 +784,7 @@ nav#nav .nav-lang{
 }
 
 /* Tablet */
-@media (min-width:761px) and (max-width:1100px){
+@media (min-width:761px) and (max-width:1100px) and (orientation:landscape){
   .page-overlay .ai-gallery,
   .series-page .ai-gallery,
   .artwork-gallery{
@@ -793,7 +793,7 @@ nav#nav .nav-lang{
 }
 
 /* Phone */
-@media (max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .page-overlay .page-inner,
   .series-page .page-inner,
   .series-page .series-page-inner{
@@ -890,12 +890,12 @@ nav#nav .nav-lang{
   color:#333;
 }
 
-@media(min-width:761px) and (max-width:1100px){
+@media (min-width:761px) and (max-width:1100px) and (orientation:landscape){
   .career-archive-grid{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .biography-hero{
     margin:18px auto 30px;
   }
@@ -935,7 +935,7 @@ nav#nav .nav-lang{
   color:#555;
   text-align:center;
 }
-@media(min-width:761px) and (max-width:1100px){
+@media (min-width:761px) and (max-width:1100px) and (orientation:landscape){
   .series-heading{
     width:min(760px,calc(100% - 84px));
   }
@@ -943,7 +943,7 @@ nav#nav .nav-lang{
     font-size:20.25px;
   }
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .series-heading{
     width:calc(100% - 58px);
   }
@@ -1013,7 +1013,7 @@ select.nav-lang{
   .lightbox-prev{left:8px;}
   .lightbox-next{right:8px;}
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .lightbox{padding-left:48px!important;padding-right:48px!important;}
   .lightbox-nav{width:40px;height:60px;font-size:42px;background:rgba(255,255,255,.78);}
   .lightbox-prev{left:2px;}
@@ -1082,7 +1082,7 @@ select.nav-lang{
 }
 
 /* The old hidden close rule remains untouched; this is the new explicit control */
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .global-menu{
     top:20px!important;
     right:14px!important;
@@ -1193,7 +1193,7 @@ select.nav-lang{
   outline:none;
 }
 .lang-option[aria-selected="true"]{background:#aeadad;}
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .lang-picker{width:132px;margin:9px 0 0 auto;}
   .lang-current{width:132px;height:32px;grid-template-columns:1fr 34px;}
   .lang-current-label{font-size:13px;padding:0 9px;}
@@ -1225,7 +1225,7 @@ select.nav-lang{
   min-height:32px!important;
   box-sizing:border-box!important;
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .lang-picker{width:166px!important;}
   .lang-current{width:166px!important;height:32px!important;grid-template-columns:132px 34px!important;}
   .lang-current-label{width:132px!important;height:32px!important;}
@@ -1242,7 +1242,7 @@ select.nav-lang{
   transform:translateX(-70px)!important;
 }
 /* WINDOWS/DESKTOP HOME SERIES — same alternating representative artwork as Paintings */
-@media(min-width:761px){
+@media (min-width:1101px), (min-width:761px) and (orientation:landscape){
   #series .grid{
     display:grid!important;
     grid-template-columns:1fr!important;
@@ -1301,7 +1301,7 @@ select.nav-lang{
 }
 
 /* MOBILE HOME SERIES — alternating representative artwork, matching Paintings */
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   #series .grid{
     display:grid!important;
     grid-template-columns:1fr!important;
@@ -1396,13 +1396,13 @@ select.nav-lang{
 
 <style id="gongora-final-fixes-10oct">
 /* Requested fixes — intentionally last so older rules cannot override them. */
-@media (min-width:761px){
+@media (min-width:1101px), (min-width:761px) and (orientation:landscape){
   #infinito .box{width:min(88vw,1694px)!important;}
   #infinito .caption{width:min(88vw,1694px)!important;}
   #bio.bio-under-work .bio-inline{font-size:clamp(10px,1.08vw,16px)!important;line-height:1.35!important;}
   #bio.bio-under-work .bio-name{font-size:2em!important;line-height:1!important;}
 }
-@media (max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   #art-lightbox .lightbox-nav{display:none!important;}
   #art-lightbox{padding-left:12px!important;padding-right:12px!important;}
   #art-lightbox .lightbox-wrap{width:100%!important;max-width:100%!important;margin:0 auto!important;text-align:center!important;}
@@ -1417,20 +1417,20 @@ select.nav-lang{
 header{background:#fff!important;}
 .hero,section.content{scroll-margin-top:110px;}
 
-@media (min-width:761px){
+@media (min-width:1101px), (min-width:761px) and (orientation:landscape){
   /* Windows only: GÓNGORA 25% smaller. */
   header .brand strong{font-size:clamp(27px,3.9vw,57px)!important;}
   /* Windows only: INFINITO 5% smaller. */
   #infinito .box,#infinito .caption{width:min(86.108vw,1657px)!important;}
 }
-@media (max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .hero,section.content{scroll-margin-top:88px;}
 }
 </style>
 
 
 <style id="home-short-bio-desktop-35pct-fix">
-@media (min-width:761px){
+@media (min-width:1101px), (min-width:761px) and (orientation:landscape){
   #bio.bio-under-work .bio.bio-inline{
     font-size:21.6px!important;
   }
@@ -1443,7 +1443,7 @@ header{background:#fff!important;}
 
 <style id="infinito-vertical-triptych-only-11oct">
 /* Requested only: Windows Home = three vertical phone-format INFINITO works in the existing space. */
-@media (min-width:761px){
+@media (min-width:1101px), (min-width:761px) and (orientation:landscape){
   #infinito .screen{
     aspect-ratio:2.35/1!important;
     display:grid!important;
@@ -1479,7 +1479,7 @@ header{background:#fff!important;}
     min-height:0!important;
   }
 }
-@media (max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   #infinito #art2,#infinito #art3{display:none!important;}
 }
 </style>
@@ -1494,7 +1494,7 @@ header{background:#fff!important;}
 @media (hover:hover) and (pointer:fine){
   .home-biography-link .home-biography-button:hover{background:#111;color:#fff;}
 }
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .home-biography-link .home-biography-button{min-height:72px;padding:18px;font-size:24px;}
   #contacto{display:block!important;visibility:visible!important;}
 }
@@ -1515,7 +1515,7 @@ header{background:#fff!important;}
 .home-biography-link .home-biography-copy strong{font:400 clamp(24px,3vw,42px)/1.05 Georgia,serif!important;}
 .home-biography-link .home-biography-image{display:block!important;min-height:190px!important;height:190px!important;overflow:hidden!important;background:#f4f4f4!important;}
 .home-biography-link .home-biography-image img{display:block!important;width:100%!important;height:190px!important;object-fit:cover!important;}
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   .home-biography-link .home-biography-button{display:grid!important;grid-template-columns:1fr 42%!important;min-height:120px!important;padding:0!important;}
   .home-biography-link .home-biography-copy{gap:10px!important;padding:18px!important;}
   .home-biography-link .home-biography-copy strong{font-size:24px!important;}
@@ -1527,7 +1527,7 @@ header{background:#fff!important;}
 /* Requested only: Home biography text 15% larger. */
 #bio.bio-under-work .bio.bio-inline{font-size:24.84px!important;}
 #bio.bio-under-work .bio.bio-inline > span{font-size:24.84px!important;}
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   #bio.bio-under-work .bio.bio-inline{font-size:21.85px!important;}
   #bio.bio-under-work .bio.bio-inline > span{font-size:21.85px!important;}
 }
@@ -1556,7 +1556,7 @@ body:has(#page-primer-impulso.open) .global-menu{visibility:hidden!important;}
   font:400 clamp(10px,1.15vw,18px)/1.3 Georgia,serif;text-align:left;
 }
 #page-primer-impulso .primer-impulso-gallery{margin-top:24px;}
-@media(max-width:760px){
+@media (max-width:760px), (min-width:761px) and (max-width:1100px) and (orientation:portrait){
   #page-primer-impulso .primer-impulso-live{width:94%;max-width:94%;margin:10px 0 28px;}
   #page-primer-impulso .primer-impulso-live-screen{aspect-ratio:.735/1;display:block;}
   #page-primer-impulso .primer-impulso-live-screen iframe{width:100%;height:100%;}
@@ -2755,11 +2755,11 @@ window.addEventListener('resize',setResponsiveArt);
   const page=document.getElementById('page-primer-impulso');
   if(!page)return;
   const frames=[1,2,3].map(i=>document.getElementById('primer-impulso-art'+i));
-  const artPath='el-primer-impulso/el-primer-impulso3.html?v=evolucion-20261016';
+  const artPath='el-primer-impulso/el-primer-impulso3.html?v=firma-tablet-20261016-2';
   let activeCount=0;
   function syncNewSeriesArtwork(){
     const visible=page.classList.contains('open');
-    const wanted=visible ? (window.matchMedia('(max-width:760px)').matches ? 1 : 3) : 0;
+    const wanted=visible ? (window.matchMedia('(max-width:760px), (max-width:1100px) and (orientation:portrait)').matches ? 1 : 3) : 0;
     if(wanted===activeCount)return;
     frames.forEach((frame,i)=>{
       if(!frame)return;
