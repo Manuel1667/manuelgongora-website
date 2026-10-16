@@ -157,7 +157,7 @@ function prepareComposition(){
 }
 function backgroundBase(){
  // Al abrir: un color plano total con iluminaciones sutiles y visibles.
- const base=choose(bg.slice(0,Math.min(4,bg.length)));
+ const base=chance(.38)?choose(bg.slice(0,Math.min(3,bg.length))):choose(bg.slice(0,Math.min(4,bg.length)));
  flatBaseColor=base;
  baseCtx.fillStyle=rgb(base);baseCtx.fillRect(0,0,W,H);
  initialFlatIlluminations(baseCtx,base);
@@ -299,6 +299,7 @@ function buildBackground(){
  // Aquí el complementario solo se mezcla suavemente, alrededor de un 3%, para no engrisar tanto el color.
  const passes=integer(14,24);
  const intro=integer(4,6);
+ const redIntroCount=chance(.42)?integer(1,2):0;
  const baseComp=vibrantComplement(flatBaseColor||choose(bg));
  for(let i=0;i<passes;i++){
   let x=0,y=0,angle=0,length=0,width=0,steps=0,turn=0,kind='flow';
@@ -327,8 +328,10 @@ function buildBackground(){
    turn=rand(.04,.16);
    kind=chance(.22)?'fold':'flow';
   }
-  const seedCol=Math.random()<.42?choose(bg.slice(0,3)):chance(.22)?choose(accents):choose(bg);
-  const compWeight=.03;
+  const seedCol=i<redIntroCount
+    ? choose(bg.slice(0,3))
+    : (Math.random()<.42?choose(bg.slice(0,3)):chance(.22)?choose(accents):choose(bg));
+  const compWeight=i<redIntroCount?.012:.03;
   const baseCol=mix(seedCol,baseComp,compWeight);
   const blendCol=chance(.55)
     ? mix(baseCol,baseComp,rand(.03,.08))
@@ -972,7 +975,7 @@ const signatureDisplayCanvas=document.createElement('canvas');
 const signatureDisplayCtx=signatureDisplayCanvas.getContext('2d',{alpha:true});
 let signatureColor=[245,232,212],signatureGlow='rgba(255,255,255,.28)';
 function signatureRectForCorner(corner,width,height){
- const marginX=W*.035,marginY=H*.043;
+ const marginX=W*.035,marginY=H*.0215;
  const x=corner.endsWith('r')?W-marginX-width:marginX;
  const y=corner.startsWith('b')?H-marginY-height:marginY;
  return {x,y,w:width,h:height};
@@ -1043,7 +1046,7 @@ function startRealSignature(now){
  signatureStartedAt=now;
  signatureElapsed=0;signatureFrameClock=now;
  // Variación gestual pequeña: 5–7 %, sin cambiar la letra ni convertirla en fuente.
- signatureVariant={width:rand(.945,1.055),height:rand(.945,1.055),shear:rand(-.03,.03),tilt:rand(-.02,.02)};
+ signatureVariant={width:rand(.945,1.055),height:rand(.945,1.055),shear:rand(-.012,.012),tilt:rand(-.006,.006)};
  const width=W*.13*signatureVariant.width;
  const height=width*(184/374)*signatureVariant.height;
  signatureCorner=chooseCleanSignatureCorner(width,height);
