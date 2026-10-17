@@ -41,7 +41,7 @@ const clamp01=t=>clamp(t,0,1);
 const rgb=c=>`rgb(${c.map(x=>Math.round(clamp(x,0,255))).join(',')})`;
 const mix=(a,b,t)=>a.map((v,i)=>lerp(v,b[i],t));
 let W=1200,H=760,D=1,workNo=0;
-let startAt=0,finishAt=0,holdAt=0,phase='paint',paused=false,cycleCompleted=false;
+let startAt=0,mainFinishAt=0,finishAt=0,holdAt=0,phase='paint',paused=false,cycleCompleted=false;
 let actions=[],actionIndex=0,completed=0;
 let bg=[],accents=[],colorMood=0,bgMode='mixed',composition=null;
 let pendingResize=0,nextLiquifyAt=0,bgEndAt=0,formsEndAt=0,detailStartAt=0,liquifyPool=[];
@@ -361,14 +361,16 @@ function detailColor(base){
  return deepen(comp,rand(.04,.18));
 }
 function liquifyEveryDetail(context,s){
- // Cada detalle recibe su propia deformación para ganar magia y organicidad.
+ // Cada detalle recibe VARIOS liquify para que no se vea rígido.
  const r=strokeBounds(s);
- const pad=Math.max(10,s.width*1.8);
+ const pad=Math.max(12,s.width*2.0);
  const x=clamp(r.x-pad,0,W), y=clamp(r.y-pad,0,H);
  const w=Math.min(W-x,r.w+pad*2), h=Math.min(H-y,r.h+pad*2);
  if(w<10||h<10)return;
- liquifyRegion(context,x,y,w,h,rand(.045,.080));
- if(chance(.85)) liquifyRegion(context,x,y,w,h,rand(.030,.070));
+ liquifyRegion(context,x,y,w,h,rand(.040,.078));
+ liquifyRegion(context,x,y,w,h,rand(.028,.064));
+ if(chance(.92)) liquifyRegion(context,x,y,w,h,rand(.018,.048));
+ if(chance(.58)) liquifyRegion(context,x,y,w,h,rand(.012,.034));
 }
 function liquifyFormStroke(context,s){
  const r=strokeBounds(s);
@@ -430,6 +432,58 @@ function addInterlacedDetail(cx,cy,scale,color){
  }
  if(chance(.42)) addArcDetail(cx+rand(-scale*.14,scale*.14),cy+rand(-scale*.14,scale*.14),scale*rand(.32,.70),chance(.75)?illuminate(color,rand(.18,.34)):color);
  if(chance(.20)) addLightDots(cx,cy,scale,color,integer(1,2));
+}
+
+
+function addWebNest(cx,cy,scale,color){
+ // Estructuras orgánicas tipo telaraña, pero vivas, irregulares y pictóricas.
+ const spokes=integer(4,8);
+ const rings=integer(2,4);
+ const baseAngle=rand(-Math.PI,Math.PI);
+ const nodes=[];
+ const radial=[];
+ for(let i=0;i<spokes;i++){
+  const a=baseAngle+TAU*(i/spokes)+rand(-.28,.28);
+  const len=scale*rand(.80,1.75);
+  const pts=makePath(cx+rand(-scale*.10,scale*.10),cy+rand(-scale*.10,scale*.10),len,a,rand(.06,.18),integer(16,28),chance(.30)?'fold':'flow');
+  const c=detailColor(chance(.58)?mix(color,choose(bg),rand(.12,.30)):illuminate(color,rand(.10,.28)));
+  const blend=chance(.76)?mix(c,choose(bg),rand(.18,.40)):mix(c,choose(accents),rand(.10,.24));
+  pushDetailStroke(pts,rand(1.8,5.8),c,{duration:rand(.18,.42),edgeSoft:rand(.14,.30),taperMode:chance(.56)?'startHeavy':'endHeavy',blend});
+  radial.push(pts);
+  const pick=pts[Math.max(2,Math.min(pts.length-2,Math.floor(pts.length*rand(.42,.88))))];
+  nodes.push(pick);
+  if(chance(.42)){
+   const off=makePath(pick[0],pick[1],scale*rand(.22,.62),a+rand(.55,1.45)*(chance(.5)?1:-1),rand(.08,.22),integer(8,16),chance(.34)?'fold':'flow');
+   pushDetailStroke(off,rand(1.4,4.2),detailColor(c),{duration:rand(.12,.28),edgeSoft:rand(.12,.26),taperMode:chance(.5)?'startHeavy':'endHeavy',blend:mix(c,choose(bg),rand(.16,.34))});
+  }
+ }
+ for(let r=0;r<rings;r++){
+  const rr=scale*rand(.20+.18*r,.34+.25*r);
+  const loop=[];
+  for(let i=0;i<spokes;i++){
+   const a=baseAngle+TAU*(i/spokes)+rand(-.24,.24);
+   const jit=1+rand(-.20,.20);
+   loop.push([cx+Math.cos(a)*rr*jit,cy+Math.sin(a)*rr*jit]);
+  }
+  loop.push(loop[0]);
+  const lc=detailColor(chance(.55)?mix(color,choose(bg),rand(.14,.26)):illuminate(color,rand(.08,.22)));
+  pushDetailStroke(loop,rand(1.2,4.6),lc,{duration:rand(.16,.34),edgeSoft:rand(.12,.28),taperMode:chance(.5)?'startHeavy':'endHeavy',blend:mix(lc,choose(bg),rand(.18,.36))});
+ }
+ for(let i=0;i<nodes.length;i++){
+  const a=nodes[i], b=nodes[(i+1)%nodes.length];
+  if(chance(.84)){
+   const midx=(a[0]+b[0])*.5+rand(-scale*.08,scale*.08);
+   const midy=(a[1]+b[1])*.5+rand(-scale*.08,scale*.08);
+   const chord=[[a[0],a[1]],[midx,midy],[b[0],b[1]]];
+   const cc=detailColor(chance(.48)?illuminate(color,rand(.10,.24)):mix(color,choose(bg),rand(.14,.28)));
+   pushDetailStroke(chord,rand(1.0,3.8),cc,{duration:rand(.12,.24),edgeSoft:rand(.14,.28),taperMode:chance(.5)?'startHeavy':'endHeavy',blend:mix(cc,choose(bg),rand(.16,.32))});
+  }
+ }
+ if(chance(.66)) addElementDetail(cx+rand(-scale*.10,scale*.10),cy+rand(-scale*.10,scale*.10),scale*rand(.34,.66),color);
+ if(chance(.52)) addArcDetail(cx+rand(-scale*.16,scale*.16),cy+rand(-scale*.16,scale*.16),scale*rand(.26,.56),color);
+ if(chance(.24)) addRareWeirdThing(cx+rand(-scale*.12,scale*.12),cy+rand(-scale*.12,scale*.12),scale*rand(.22,.46),color);
+ if(chance(.26)) addCrossDetail(cx+rand(-scale*.14,scale*.14),cy+rand(-scale*.14,scale*.14),scale*rand(.18,.34),color);
+ addLightDots(cx,cy,scale,color,integer(1,3));
 }
 
 function pushDetailStroke(pts,w,color,extra={}){
@@ -627,31 +681,91 @@ function finishAndCommitRealSignature(now){
 
 
 function buildDetails(){
- // Versión sin detalles.
+ // Detalles finales inspirados en la demostración del mix brush:
+ // menos líneas sueltas y más estructuras orgánicas, entrelazadas y elaboradas.
+ const minSide=Math.min(W,H);
+ const hubX=W*rand(.44,.58), hubY=H*rand(.34,.60);
+ const luminous=(c)=>illuminate(detailColor(c),rand(.18,.44));
+ const anchors=[];
+ const focalCount=integer(5,8);
+ for(let i=0;i<focalCount;i++){
+  anchors.push([
+   hubX+rand(-W*.16,W*.16),
+   hubY+rand(-H*.20,H*.20)
+  ]);
+ }
+
+ // Núcleos principales: más complejos, tipo telaraña orgánica / sello vivo.
+ for(const [cx,cy] of anchors){
+  const scale=minSide*rand(.06,.13);
+  const base=luminous(chance(.58)?choose(accents):mix(choose(accents),choose(bg),rand(.08,.22)));
+  if(chance(.92)) addWebNest(cx,cy,scale*rand(.88,1.22),base);
+  if(chance(.74)) addInterlacedDetail(cx+rand(-scale*.16,scale*.16),cy+rand(-scale*.16,scale*.16),scale*rand(.64,1.02),base);
+  if(chance(.72)) addElementDetail(cx+rand(-scale*.18,scale*.18),cy+rand(-scale*.18,scale*.18),scale*rand(.60,.96),base);
+  if(chance(.52)) addRibbonElement(cx+rand(-scale*.18,scale*.18),cy+rand(-scale*.18,scale*.18),scale*rand(.52,.92),base);
+  if(chance(.42)) addArcDetail(cx+rand(-scale*.24,scale*.24),cy+rand(-scale*.24,scale*.24),scale*rand(.34,.78),base);
+  if(chance(.34)) addSpineDetail(cx+rand(-scale*.18,scale*.18),cy+rand(-scale*.18,scale*.18),scale*rand(.34,.72),base);
+  if(chance(.18)) addRareWeirdThing(cx+rand(-scale*.12,scale*.12),cy+rand(-scale*.12,scale*.12),scale*rand(.24,.48),base);
+ }
+
+ // Barridos largos: menos simples, más finos y mezclados con el fondo.
+ const sweepCount=integer(5,8);
+ for(let i=0;i<sweepCount;i++){
+  const len=minSide*rand(.24,.56);
+  const angle=rand(-Math.PI,Math.PI);
+  const cx=hubX+rand(-W*.18,W*.18);
+  const cy=hubY+rand(-H*.24,H*.24);
+  const pts=makePath(cx,cy,len,angle,rand(.10,.28),integer(20,36),chance(.50)?'fold':'flow');
+  const color=luminous(chance(.56)?choose(accents):choose(bg));
+  const blend=chance(.78)?mix(color,choose(bg),rand(.14,.34)):mix(color,choose(accents),rand(.10,.22));
+  pushDetailStroke(pts,rand(1.6,6.8),color,{duration:rand(.24,.58),edgeSoft:rand(.12,.28),taperMode:chance(.5)?'startHeavy':'endHeavy',blend});
+  if(chance(.72)){
+   const partner=makePath(cx+rand(-len*.12,len*.12),cy+rand(-len*.12,len*.12),len*rand(.36,.82),angle+rand(.36,1.10)*(chance(.5)?1:-1),rand(.10,.24),integer(12,24),chance(.46)?'fold':'flow');
+   pushDetailStroke(partner,rand(1.2,4.8),detailColor(illuminate(color,rand(.08,.20))),{duration:rand(.14,.34),edgeSoft:rand(.10,.24),taperMode:chance(.5)?'startHeavy':'endHeavy',blend:mix(color,choose(bg),rand(.16,.34))});
+  }
+ }
+
+ // Ecos laterales: menos cantidad, con más carácter y algún sello/símbolo orgánico.
+ const echoCount=integer(4,6);
+ for(let i=0;i<echoCount;i++){
+  const sideX=rand(W*.14,W*.86), sideY=rand(H*.14,H*.86), scale=minSide*rand(.042,.082);
+  const base=luminous(choose(accents));
+  if(chance(.52)) addWebNest(sideX,sideY,scale*rand(.70,1.02),base);
+  else if(chance(.68)) addInterlacedDetail(sideX,sideY,scale,base);
+  else addElementDetail(sideX,sideY,scale*rand(.72,1.08),base);
+  if(chance(.26)) addCrossDetail(sideX+rand(-scale*.12,scale*.12),sideY+rand(-scale*.12,scale*.12),scale*rand(.16,.28),base);
+  if(chance(.22)) addHexDetail(sideX+rand(-scale*.12,scale*.12),sideY+rand(-scale*.12,scale*.12),scale*rand(.14,.24),base);
+  if(chance(.34)) addLightDots(sideX,sideY,scale,base,integer(1,3));
+ }
 }
+
 function organizeActions(){
  const bgActs=actions.filter(a=>a.stage==='bg');
  const formActs=actions.filter(a=>a.stage==='forms');
  const detailActs=actions.filter(a=>a.stage==='detail');
- // 15% de ejecución para fondo / 58% masas y formas / 27% detalles.
- const duration=finishAt-startAt;
- function setTiming(items,a,b){
+ // La obra principal conserva su duración habitual; los nuevos detalles se
+ // añaden DESPUÉS, en un tramo extra de 15 a 25 s.
+ const coreEnd=mainFinishAt||finishAt;
+ function setTimingAbs(items,fromMs,toMs){
+   const span=Math.max(1,toMs-fromMs);
    const weights=items.map(x=>x.stroke.duration),sum=weights.reduce((a,b)=>a+b,0)||1;
-   let now=startAt+duration*a;
+   let now=fromMs;
    for(let i=0;i<items.length;i++){
-     const d=duration*(b-a)*weights[i]/sum;
+     const d=span*weights[i]/sum;
      items[i].from=now;items[i].to=now+d;
      now+=d;
    }
  }
- setTiming(bgActs,0,.15);
- setTiming(formActs,.15,.73);
- setTiming(detailActs,.73,1.00);
- bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:(startAt+duration*.15);
- formsEndAt=formActs.length?formActs[formActs.length-1].to:bgEndAt;
- detailStartAt=detailActs.length?detailActs[0].from:formsEndAt;
+ const bgEnd=startAt+(coreEnd-startAt)*.15;
+ setTimingAbs(bgActs,startAt,bgEnd);
+ setTimingAbs(formActs,bgEnd,coreEnd);
+ setTimingAbs(detailActs,coreEnd,finishAt);
+ bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:bgEnd;
+ formsEndAt=formActs.length?formActs[formActs.length-1].to:coreEnd;
+ detailStartAt=detailActs.length?detailActs[0].from:coreEnd;
  actions=[...bgActs,...formActs,...detailActs];
 }
+
 function modelStroke(context,s,left,right,count){
  if(s.kind==='background')return;
  const p0=s.pts[0],p1=s.pts[Math.min(s.pts.length-1,count)],mx=(p0[0]+p1[0])*.5,my=(p0[1]+p1[1])*.5;
@@ -941,7 +1055,7 @@ function resetWork(now=performance.now()){
   baseCtx.setTransform(D,0,0,D,0,0);baseCtx.imageSmoothingEnabled=true;
   backgroundBase();compositeBase();actions=[];actionIndex=0;completed=0;liquifyPool=[];
   bgPool=[];formPool=[];detailPool=[];liquifyEvents=[];liquifyIndex=0;
-  startAt=now;finishAt=now+rand(360000,540000)+5000;
+  startAt=now;mainFinishAt=now+rand(360000,540000)+5000;finishAt=mainFinishAt+rand(15000,25000);
   holdAt=0;phase='paint';cycleCompleted=false;
   signatureStartedAt=0;signatureVariant=null;
   buildBackground();buildMainForms();buildDetails();organizeActions();prepareLiquifyPlan();
