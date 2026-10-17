@@ -360,6 +360,26 @@ function detailColor(base){
  if(chance(.08)) return comp;
  return deepen(comp,rand(.04,.18));
 }
+
+function brightenFinalDetailStroke(stroke){
+ if(!stroke) return;
+ const paletteSource=detailPalette.length?choose(detailPalette):choose(accents);
+ const baseColor=stroke.color||paletteSource;
+ const brightSeed=chance(.55)?mix(baseColor,paletteSource,rand(.12,.28)):baseColor;
+ stroke.color=illuminate(brightSeed,rand(.12,.32));
+ if(stroke.blend) stroke.blend=illuminate(mix(stroke.blend,stroke.color,.42),rand(.08,.24));
+ else stroke.blend=illuminate(stroke.color,rand(.08,.18));
+ if(chance(.35)) stroke.blend=mix(stroke.blend,choose(accents),rand(.08,.16));
+ stroke.alpha=Math.max(stroke.alpha||.14,.16);
+}
+function softenLastFiveSecondsDetails(detailActs,toMs){
+ const cutoff=toMs-5000;
+ for(const act of detailActs){
+  if(act.to<=cutoff) continue;
+  brightenFinalDetailStroke(act.stroke);
+ }
+}
+
 function liquifyEveryDetail(context,s){
  // Cada detalle recibe VARIOS liquify para que no se vea rígido.
  const r=strokeBounds(s);
@@ -551,6 +571,7 @@ const realSignatureFrames = ['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXYA
 const realSignatureImages=realSignatureFrames.map(data=>{const img=new Image();img.src=data;return img;});
 let signatureStartedAt=0, signatureCorner='br',signatureVariant=null;
 let signatureElapsed=0,signatureFrameClock=0;
+let currentWorkSigned=false;
 const signatureDuration=5400;
 const signatureDisplayCanvas=document.createElement('canvas');
 const signatureDisplayCtx=signatureDisplayCanvas.getContext('2d',{alpha:true});
@@ -625,6 +646,7 @@ function tintSignatureImage(img,color){
 }
 function startRealSignature(now){
  signatureStartedAt=now;
+ currentWorkSigned=false;
  signatureElapsed=0;signatureFrameClock=now;
  // Variación gestual pequeña: 5–7 %, sin cambiar la letra ni convertirla en fuente.
  signatureVariant={width:rand(.945,1.055),height:rand(.945,1.055),shear:rand(-.03,.03),tilt:rand(-.02,.02)};
@@ -671,6 +693,7 @@ function finishAndCommitRealSignature(now){
  baseCtx.setTransform(1,0,0,1,0,0);
  baseCtx.drawImage(canvas,0,0,baseLayer.width,baseLayer.height);
  baseCtx.restore();
+ currentWorkSigned=true;
  phase='hold';
  holdAt=now;
  // En museo guardar exactamente esta capa firmada; en web no se guarda.
@@ -760,6 +783,7 @@ function organizeActions(){
  setTimingAbs(bgActs,startAt,bgEnd);
  setTimingAbs(formActs,bgEnd,coreEnd);
  setTimingAbs(detailActs,coreEnd,finishAt);
+ softenLastFiveSecondsDetails(detailActs,finishAt);
  bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:bgEnd;
  formsEndAt=formActs.length?formActs[formActs.length-1].to:coreEnd;
  detailStartAt=detailActs.length?detailActs[0].from:coreEnd;
@@ -1055,16 +1079,17 @@ function resetWork(now=performance.now()){
   baseCtx.setTransform(D,0,0,D,0,0);baseCtx.imageSmoothingEnabled=true;
   backgroundBase();compositeBase();actions=[];actionIndex=0;completed=0;liquifyPool=[];
   bgPool=[];formPool=[];detailPool=[];liquifyEvents=[];liquifyIndex=0;
-  startAt=now;mainFinishAt=now+rand(360000,540000)+5000;finishAt=mainFinishAt+rand(15000,25000);
+  startAt=now;mainFinishAt=now+rand(180000,270000)+2500;finishAt=mainFinishAt;
   holdAt=0;phase='paint';cycleCompleted=false;
+  currentWorkSigned=false;
   signatureStartedAt=0;signatureVariant=null;
-  buildBackground();buildMainForms();buildDetails();organizeActions();prepareLiquifyPlan();
+  buildBackground();buildMainForms();organizeActions();prepareLiquifyPlan();
 }
 function frame(now){
  if(!paused){
   if(phase==='hold'){
     compositeBase();
-    if(now-holdAt>=2000) resetWork(now);
+    if(currentWorkSigned && now-holdAt>=2000) resetWork(now);
   }else if(phase==='sign'){
     // El gesto avanza solo mientras realmente se dibuja; evita saltos de reloj en pantallas lentas.
     if(realSignatureImages.every(img=>img.complete && img.naturalWidth)){
@@ -1082,6 +1107,9 @@ function frame(now){
       compositeBase();
       startRealSignature(now);
       cycleCompleted=true;
+    }else if(cycleCompleted && !currentWorkSigned){
+      compositeBase();
+      startRealSignature(now);
     }
   }
  }
