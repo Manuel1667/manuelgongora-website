@@ -365,12 +365,13 @@ function brightenFinalDetailStroke(stroke){
  if(!stroke) return;
  const paletteSource=detailPalette.length?choose(detailPalette):choose(accents);
  const baseColor=stroke.color||paletteSource;
- const brightSeed=chance(.55)?mix(baseColor,paletteSource,rand(.12,.28)):baseColor;
- stroke.color=illuminate(brightSeed,rand(.12,.32));
- if(stroke.blend) stroke.blend=illuminate(mix(stroke.blend,stroke.color,.42),rand(.08,.24));
- else stroke.blend=illuminate(stroke.color,rand(.08,.18));
- if(chance(.35)) stroke.blend=mix(stroke.blend,choose(accents),rand(.08,.16));
- stroke.alpha=Math.max(stroke.alpha||.14,.16);
+ const brightSeed=chance(.58)?mix(baseColor,paletteSource,rand(.10,.24)):baseColor;
+ stroke.color=illuminate(brightSeed,rand(.10,.28));
+ if(stroke.blend) stroke.blend=illuminate(mix(stroke.blend,stroke.color,.46),rand(.08,.20));
+ else stroke.blend=illuminate(stroke.color,rand(.06,.16));
+ if(chance(.28)) stroke.blend=mix(stroke.blend,choose(accents),rand(.06,.14));
+ stroke.alpha=rand(.20,.40);
+ stroke.edgeSoft=Math.max(stroke.edgeSoft||.16,rand(.22,.38));
 }
 function softenLastFiveSecondsDetails(detailActs,toMs){
  const cutoff=toMs-5000;
@@ -577,7 +578,7 @@ const signatureDisplayCanvas=document.createElement('canvas');
 const signatureDisplayCtx=signatureDisplayCanvas.getContext('2d',{alpha:true});
 let signatureColor=[245,232,212],signatureGlow='rgba(255,255,255,.28)';
 function signatureRectForCorner(corner,width,height){
- const marginX=W*.035,marginY=H*.043;
+ const marginX=W*.035,marginY=H*.022;
  const x=corner.endsWith('r')?W-marginX-width:marginX;
  const y=corner.startsWith('b')?H-marginY-height:marginY;
  return {x,y,w:width,h:height};
@@ -710,7 +711,7 @@ function buildDetails(){
  const hubX=W*rand(.44,.58), hubY=H*rand(.34,.60);
  const luminous=(c)=>illuminate(detailColor(c),rand(.18,.44));
  const anchors=[];
- const focalCount=integer(5,8);
+ const focalCount=integer(3,5);
  for(let i=0;i<focalCount;i++){
   anchors.push([
    hubX+rand(-W*.16,W*.16),
@@ -765,9 +766,9 @@ function buildDetails(){
 function organizeActions(){
  const bgActs=actions.filter(a=>a.stage==='bg');
  const formActs=actions.filter(a=>a.stage==='forms');
- const detailActs=actions.filter(a=>a.stage==='detail');
- // La obra principal conserva su duración habitual; los nuevos detalles se
- // añaden DESPUÉS, en un tramo extra de 15 a 25 s.
+ const rawDetailActs=actions.filter(a=>a.stage==='detail');
+ const detailActs=rawDetailActs.filter((a,i)=> i===0 || Math.random()<.50);
+ // La obra principal se simplifica: la mitad aproximada de líneas y menos tiempo total.
  const coreEnd=mainFinishAt||finishAt;
  function setTimingAbs(items,fromMs,toMs){
    const span=Math.max(1,toMs-fromMs);
@@ -779,24 +780,21 @@ function organizeActions(){
      now+=d;
    }
  }
- const bgEnd=startAt+(coreEnd-startAt)*.15;
+ const bgEnd=startAt+(coreEnd-startAt)*.16;
  setTimingAbs(bgActs,startAt,bgEnd);
  setTimingAbs(formActs,bgEnd,coreEnd);
  setTimingAbs(detailActs,coreEnd,finishAt);
- // En los últimos trazos, devolverles la transparencia pictórica del comienzo.
- // No se añaden líneas ni se cambian sus colores, trayectorias, duración o Liquify.
- const softEndingFrom=finishAt-35000;
+ const softEndingFrom=finishAt-26000;
  for(const a of formActs){
   if(a.to<=softEndingFrom || a.to>finishAt) continue;
-  const progress=clamp01((a.to-softEndingFrom)/35000);
-  const maxAlpha=lerp(.28,.14,progress);
+  const progress=clamp01((a.to-softEndingFrom)/26000);
+  const maxAlpha=lerp(.24,.12,progress);
   a.stroke.alpha=Math.min(a.stroke.alpha,maxAlpha*rand(.84,1.0));
  }
  softenLastFiveSecondsDetails(detailActs,finishAt);
  bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:bgEnd;
  formsEndAt=formActs.length?formActs[formActs.length-1].to:coreEnd;
  detailStartAt=detailActs.length?detailActs[0].from:coreEnd;
- // No acelerar ni amontonar pinceladas: omitir las últimas 15 s de trazos.
  actions=[...bgActs,...formActs.filter(a=>a.to<=finishAt),...detailActs];
 }
 
@@ -1000,19 +998,19 @@ function prepareLiquifyPlan(){
    liquifyEvents.push({time:bgEndAt+formDur*((i+1)/(formCount+1)), phase:'form'});
   }
  }
- const detailCount=integer(10,16);
+ const detailCount=integer(5,8);
  if(finishAt>detailStartAt){
   const detailDur=finishAt-detailStartAt;
   for(let i=0;i<detailCount;i++){
    liquifyEvents.push({time:detailStartAt+detailDur*((i+1)/(detailCount+1)), phase:'detail'});
   }
  }
- // Al cerrar el ciclo, dejar únicamente una o dos distorsiones mágicas
+ // Al cerrar el ciclo, dejar una o dos distorsiones mágicas extra
  // en los últimos 3–4 segundos; nunca después de la firma.
  liquifyEvents=liquifyEvents.filter(e=>e.time<finishAt-5000);
- const lastCount=integer(1,2);
- liquifyEvents.push({time:finishAt-rand(3650,3950),phase:'final-magic'});
- if(lastCount===2)liquifyEvents.push({time:finishAt-rand(3000,3350),phase:'final-magic'});
+ liquifyEvents.push({time:finishAt-rand(3850,4100),phase:'final-magic'});
+ liquifyEvents.push({time:finishAt-rand(2900,3300),phase:'final-magic'});
+ if(chance(.45))liquifyEvents.push({time:finishAt-rand(2150,2550),phase:'final-magic'});
  liquifyEvents.sort((a,b)=>a.time-b.time);
 }
 function applyLiquifyEvent(phase){
@@ -1102,7 +1100,7 @@ function resetWork(now=performance.now()){
   backgroundBase();compositeBase();actions=[];actionIndex=0;completed=0;liquifyPool=[];
   bgPool=[];formPool=[];detailPool=[];liquifyEvents=[];liquifyIndex=0;
   // Conserva el ritmo de la versión rápida, pero detiene la pintura 15 s antes.
-  startAt=now;mainFinishAt=now+rand(180000,270000)+2500;finishAt=mainFinishAt-15000;
+  startAt=now;mainFinishAt=now+rand(90000,135000)+2500;finishAt=mainFinishAt-7500;
   holdAt=0;phase='paint';cycleCompleted=false;
   currentWorkSigned=false;
   signatureStartedAt=0;signatureVariant=null;
