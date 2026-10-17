@@ -783,11 +783,21 @@ function organizeActions(){
  setTimingAbs(bgActs,startAt,bgEnd);
  setTimingAbs(formActs,bgEnd,coreEnd);
  setTimingAbs(detailActs,coreEnd,finishAt);
+ // En los últimos trazos, devolverles la transparencia pictórica del comienzo.
+ // No se añaden líneas ni se cambian sus colores, trayectorias, duración o Liquify.
+ const softEndingFrom=finishAt-35000;
+ for(const a of formActs){
+  if(a.to<=softEndingFrom || a.to>finishAt) continue;
+  const progress=clamp01((a.to-softEndingFrom)/35000);
+  const maxAlpha=lerp(.28,.14,progress);
+  a.stroke.alpha=Math.min(a.stroke.alpha,maxAlpha*rand(.84,1.0));
+ }
  softenLastFiveSecondsDetails(detailActs,finishAt);
  bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:bgEnd;
  formsEndAt=formActs.length?formActs[formActs.length-1].to:coreEnd;
  detailStartAt=detailActs.length?detailActs[0].from:coreEnd;
- actions=[...bgActs,...formActs,...detailActs];
+ // No acelerar ni amontonar pinceladas: omitir las últimas 15 s de trazos.
+ actions=[...bgActs,...formActs.filter(a=>a.to<=finishAt),...detailActs];
 }
 
 function modelStroke(context,s,left,right,count){
@@ -997,6 +1007,12 @@ function prepareLiquifyPlan(){
    liquifyEvents.push({time:detailStartAt+detailDur*((i+1)/(detailCount+1)), phase:'detail'});
   }
  }
+ // Al cerrar el ciclo, dejar únicamente una o dos distorsiones mágicas
+ // en los últimos 3–4 segundos; nunca después de la firma.
+ liquifyEvents=liquifyEvents.filter(e=>e.time<finishAt-5000);
+ const lastCount=integer(1,2);
+ liquifyEvents.push({time:finishAt-rand(3650,3950),phase:'final-magic'});
+ if(lastCount===2)liquifyEvents.push({time:finishAt-rand(3000,3350),phase:'final-magic'});
  liquifyEvents.sort((a,b)=>a.time-b.time);
 }
 function applyLiquifyEvent(phase){
@@ -1006,6 +1022,12 @@ function applyLiquifyEvent(phase){
  }else if(phase==='form' && formPool.length){
    const s=choose(formPool), box=expandRegionAroundStroke(s,.16,.28), reps=integer(10,15);
    for(let i=0;i<reps;i++) liquifyRegion(baseCtx,box.x,box.y,box.w,box.h,rand(.070,.125));
+ }else if(phase==='final-magic' && formPool.length){
+   // Distorsión localizada sobre trazos vivos, sin añadir líneas.
+   const lastForms=formPool.slice(-Math.min(formPool.length,38));
+   const s=choose(lastForms),box=expandRegionAroundStroke(s,.11,.23);
+   const reps=integer(6,9);
+   for(let i=0;i<reps;i++)liquifyRegion(baseCtx,box.x,box.y,box.w,box.h,rand(.055,.100));
  }else if(phase==='detail' && (detailPool.length||formPool.length)){
    const pool=detailPool.length?detailPool:formPool, s=choose(pool), box=expandRegionAroundStroke(s,.12,.22), reps=integer(9,13);
    for(let i=0;i<reps;i++) liquifyRegion(baseCtx,box.x,box.y,box.w,box.h,rand(.050,.095));
@@ -1079,7 +1101,8 @@ function resetWork(now=performance.now()){
   baseCtx.setTransform(D,0,0,D,0,0);baseCtx.imageSmoothingEnabled=true;
   backgroundBase();compositeBase();actions=[];actionIndex=0;completed=0;liquifyPool=[];
   bgPool=[];formPool=[];detailPool=[];liquifyEvents=[];liquifyIndex=0;
-  startAt=now;mainFinishAt=now+rand(180000,270000)+2500;finishAt=mainFinishAt;
+  // Conserva el ritmo de la versión rápida, pero detiene la pintura 15 s antes.
+  startAt=now;mainFinishAt=now+rand(180000,270000)+2500;finishAt=mainFinishAt-15000;
   holdAt=0;phase='paint';cycleCompleted=false;
   currentWorkSigned=false;
   signatureStartedAt=0;signatureVariant=null;
@@ -1093,7 +1116,8 @@ function frame(now){
   }else if(phase==='sign'){
     // El gesto avanza solo mientras realmente se dibuja; evita saltos de reloj en pantallas lentas.
     if(realSignatureImages.every(img=>img.complete && img.naturalWidth)){
-      signatureElapsed=Math.min(signatureDuration,signatureElapsed+clamp(now-signatureFrameClock,0,120));
+      // Tiempo real, también con tres cuadros en Windows: cada ciclo firma.
+      signatureElapsed=Math.min(signatureDuration,Math.max(0,now-signatureStartedAt));
       compositeBase();
       drawRealSignature(signatureStartedAt+signatureElapsed);
       if(signatureElapsed>=signatureDuration)finishAndCommitRealSignature(now);
@@ -1120,7 +1144,8 @@ function resize(){
  // Proporciones libres y alta definición; misma presión proporcional en teléfono y pantalla grande.
  W=1200;H=Math.max(540,Math.min(2100,1200*dh/dw));
  const dpx=Math.min(Math.max(devicePixelRatio||1,1),2.2,Math.sqrt(6600000/(dw*dh)));
- D=Math.max(.5,dw/W*dpx);
+ // Escala exacta: la firma no puede quedar fuera de un cuadro estrecho.
+ D=dw/W*dpx;
  canvas.width=Math.max(1,Math.round(dw*dpx));
  canvas.height=Math.max(1,Math.round(dh*dpx));
  ctx.setTransform(D,0,0,D,0,0);
