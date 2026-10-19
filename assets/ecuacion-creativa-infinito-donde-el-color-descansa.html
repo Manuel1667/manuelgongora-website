@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Manuel Góngora — Ecuación Creativa Infinito: Donde el color descansa — Obra viva</title>
+<title>Manuel Góngora — Ecuación Creativa Infinito: Donde el color reposa — Obra viva</title>
 <style>
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:#403347}
-canvas{display:block;width:100vw;height:100vh;touch-action:none}
+canvas{display:block;width:100vw;height:100vh;width:100dvw;height:100dvh;touch-action:none}
 
 </style>
 </head>
 <body>
-<canvas id="obra" aria-label="Ecuación Creativa Infinito — Donde el color descansa. Obra viva que pinta continuamente." role="img"></canvas>
+<canvas id="obra" aria-label="Ecuación Creativa Infinito — Donde el color reposa. Obra viva que pinta continuamente." role="img"></canvas>
 <script>
 'use strict';
 /*
-  ECUACIÓN CREATIVA INFINITO — THE BIG BANG
-  Manuel Góngora / primera prueba del lenguaje del pincel
+  ECUACIÓN CREATIVA INFINITO — DONDE EL COLOR REPOSA
+  Manuel Góngora / versión de pantalla, idéntica pintura a la versión museo
   Proyecto NUEVO independiente de Inteligencia Artificial.
 
   El pincel pinta progresivamente en toda la obra: ningún elemento se estampa
   como un objeto terminado. La presión varía de punta a masa y vuelve a punta.
   Orden: fondo con brochas 150–250 px, formas con brochas medianas y gruesas,
   detalles de 1–9 px. Fondo fundido de 2 o 3 colores. Nunca negro del espacio.
-  Cada pintura tarda 4–6 minutos; permanece 2 s y comienza otra.
+  Cada pintura conserva el ritmo original; permanece 2 s y comienza otra.
 */
 const canvas=document.getElementById('obra');
 const ctx=canvas.getContext('2d',{alpha:false});
@@ -62,47 +62,60 @@ function vibrantComplement(a){
  return mix(c,illuminate(c,.10),.18);
 }
 function preparePalette(){
- // DONDE EL COLOR DESCANSA — cada nueva obra comienza con una familia cromática distinta.
- // Rojos, amarillos y azules: 90% de la selección; verdes y violetas JUNTOS: 10%.
- const primarias=[
-  {name:'red',h:rand(350,359)},
-  {name:'yellow',h:rand(45,59)},
-  {name:'blue',h:rand(200,225)}
+ // Cada obra puede iniciar con TODOS los colores: primarios vibrantes,
+ // secundarios y terciarios (tierras, carmelitas, ocres, olivas, etcétera).
+ // Se mantienen familias armónicas distintas en cada nueva creación.
+ const vivid=[
+  {name:'red',h:[350,370]}, {name:'coral',h:[5,18]},
+  {name:'orange',h:[19,34]}, {name:'yellow',h:[48,65]},
+  {name:'green',h:[105,148]}, {name:'emerald',h:[150,168]},
+  {name:'turquoise',h:[170,188]}, {name:'cyan',h:[187,199]},
+  {name:'blue',h:[207,240]}, {name:'violet',h:[255,288]},
+  {name:'purple',h:[289,315]}, {name:'magenta',h:[316,349]}
  ];
- const secundarias=[
-  {name:'green',h:rand(110,141)},
-  {name:'violet',h:rand(262,295)}
+ const earth=[
+  {name:'ochre',h:[35,48]}, {name:'caramel',h:[20,34]},
+  {name:'terracotta',h:[9,22]}, {name:'umber',h:[14,29]},
+  {name:'coffee',h:[22,37]}, {name:'copper',h:[14,27]},
+  {name:'mustard',h:[43,57]}, {name:'olive',h:[67,90]},
+  {name:'moss',h:[83,117]}, {name:'wine',h:[339,354]},
+  {name:'plum',h:[285,319]}, {name:'slate',h:[202,231]}
  ];
- const protagonista=choose(primarias);
- const familia=()=>chance(.10)?choose(secundarias):(chance(.58)?protagonista:choose(primarias));
- // Tonos medios y claros intensos, con oscuros solo ocasionales para el contraste.
- // Ninguna luz cercana al blanco; no se preparan fondos casi negros.
- const tono=()=>{
-  if(chance(.12))return rand(.25,.33);
-  if(chance(.56))return rand(.51,.68);
-  return rand(.35,.50);
+ const all=[...vivid,...earth];
+ const leading=choose(all);
+ const picks=[leading];
+ // Mezcla real de familias de luz intensa y colores terciarios/tierras.
+ for(const list of [vivid,vivid,earth,earth]){
+  let f=choose(list),attempts=0;
+  while(picks.includes(f) && attempts++<12)f=choose(list);
+  if(!picks.includes(f))picks.push(f);
+ }
+ while(picks.length<integer(7,10)){
+  const f=choose(all); if(!picks.includes(f))picks.push(f);
+ }
+ const family=()=>chance(.26)?leading:chance(.77)?choose(picks):choose(all);
+ const color=(f,l)=>{
+  const tone=l??(chance(.17)?rand(.24,.35):chance(.53)?rand(.48,.69):rand(.34,.54));
+  const isEarth=earth.includes(f);
+  const saturation=isEarth?rand(.35,.75):rand(.72,.98);
+  const luminance=isEarth?Math.min(tone,rand(.31,.53)):tone;
+  return pigment(rand(f.h[0],f.h[1])+rand(-7,7),saturation,luminance);
  };
- const pintura=(f,l=tono())=>pigment(f.h+rand(-8,8),rand(.78,.98),l);
- bgMode=chance(.10)?'dark':chance(.46)?'light':chance(.52)?'medium':'mixed';
+ bgMode=chance(.10)?'dark':chance(.44)?'light':chance(.54)?'medium':'mixed';
  bg=[];
- // El primer color del lienzo es el protagonista: rojo, amarillo o azul.
- bg.push(pintura(protagonista,rand(.40,.57)));
- // Otros valores del mismo color para profundidad SIN convertirlo en gris.
- bg.push(pintura(protagonista,rand(.54,.67)));
- bg.push(pintura(protagonista,rand(.29,.39)));
- for(let i=0;i<14;i++)bg.push(pintura(familia()));
- // Las pinceladas y sus veladuras usan la misma regla cromática.
+ bg.push(color(leading,rand(.38,.60))); // Fondo único, no siempre primario.
+ bg.push(color(leading,rand(.51,.69)));
+ bg.push(color(leading,rand(.29,.42)));
+ for(let i=0;i<18;i++)bg.push(color(family()));
  accents=[];
- for(let i=0;i<22;i++)accents.push(pintura(familia()));
- // Color de detalles derivado de la misma paleta, sin complementarios puros.
+ for(let i=0;i<27;i++)accents.push(color(family()));
  detailPalette=[];
- for(const c of [...bg.slice(0,8),...accents.slice(0,12)]){
+ for(const c of [...bg.slice(0,11),...accents.slice(0,15)]){
   detailPalette.push(c);
   detailPalette.push(mix(c,choose(accents),rand(.04,.12)));
  }
- colorMood=protagonista.h;
+ colorMood=(leading.h[0]+leading.h[1])/2;
 }
-
 function paintPoint(x,y,t){
  const a=composition.angle,c=composition.centerX,d=composition.centerY;
  const v=composition.extent*t;
@@ -115,55 +128,119 @@ function prepareComposition(){
   direction:chance(.5)?1:-1
  };
 }
+// Inicio orgánico en AERÓGRAFO: recrea el lenguaje luminoso y amplio de
+// «El Primer Impulso» SIN MODIFICAR ESA OBRA, y SIN estampar una foto estática.
+// Secuencia visible: grandes masas de luz -> barridos medianos -> veladuras finas.
+// Se conservan intactas las formas, gestos, colores posteriores y guardado JPG 600 DPI.
+const OPENING_AIRBRUSH_MS=3900;
+let openingAirbrush=[],openingAirbrushIndex=0;
+function prepareOpeningAirbrush(base){
+ const large=[],medium=[],fine=[];
+ openingAirbrush=[];openingAirbrushIndex=0;
+ const side=Math.min(W,H);
+ const pushDab=(array,x,y,r,stretch,angle,color,alpha,mode='screen')=>{
+  if(r<2 || !Number.isFinite(r))return;
+  array.push({x,y,r,stretch,angle,color,alpha,mode});
+ };
+ // Las dimensiones de estos gestos siguen las grandes iluminaciones orgánicas
+ // de «El Primer Impulso»: manchas de 25–55 % del lado menor, no brochitas.
+ const zones=integer(3,4);
+ for(let i=0;i<zones;i++){
+  const cx=rand(W*.13,W*.87),cy=rand(H*.12,H*.88),ang=rand(-Math.PI,Math.PI);
+  const len=side*rand(.55,1.15),wid=side*rand(.25,.55);
+  const pts=makePath(cx-Math.cos(ang)*len*.28,cy-Math.sin(ang)*len*.28,
+    len,ang,rand(.10,.24),integer(24,38),chance(.45)?'fold':'flow');
+  const glow=illuminate(base,rand(.42,.68));
+  const accent=chance(.36)?illuminate(choose(accents),rand(.22,.43)):illuminate(glow,rand(.08,.23));
+  // Cuerpo principal del gesto: aerógrafo grande y esfumado, con presión variable.
+  for(let j=0;j<pts.length;j++){
+   const t=j/(pts.length-1),p=pts[j];
+   const pressure=.57+.43*Math.pow(Math.max(0,Math.sin(Math.PI*t)),.6);
+   const pulse=.87+.13*Math.sin(t*Math.PI*4+i);
+   const r=wid*rand(.48,.70)*pressure*pulse;
+   pushDab(large,p[0]+rand(-wid*.11,wid*.11),p[1]+rand(-wid*.11,wid*.11),
+    r,rand(.56,.92),ang+rand(-.30,.30),glow,rand(.19,.31),'screen');
+   // Otra veladura de color dentro del mismo barrido, suave, sin bordes de círculo.
+   if(j%3===0)pushDab(large,p[0]+rand(-wid*.20,wid*.20),p[1]+rand(-wid*.20,wid*.20),
+     r*rand(.78,1.15),rand(.58,.95),ang+rand(-.38,.38),accent,rand(.10,.18),
+     chance(.70)?'screen':'source-over');
+  }
+  // El Primer Impulso utiliza 3–5 amplios barridos dentro de cada zona;
+  // aquí van apareciendo, punto a punto, en tamaños medianos.
+  const sweeps=integer(3,5);
+  for(let q=0;q<sweeps;q++){
+   const a=ang+rand(-.90,.90),l=len*rand(.40,.99),brush=side*rand(.105,.235);
+   const sx=cx+rand(-wid*.53,wid*.53),sy=cy+rand(-wid*.53,wid*.53);
+   const path=makePath(sx-Math.cos(a)*l*.30,sy-Math.sin(a)*l*.30,l,a,
+      rand(.08,.22),integer(19,30),chance(.50)?'fold':'flow');
+   const col=chance(.40)?illuminate(choose(accents),rand(.25,.49)):illuminate(glow,rand(.11,.34));
+   for(let j=0;j<path.length;j++){
+    const t=j/(path.length-1),p=path[j];
+    const pressure=.54+.46*Math.sin(Math.PI*t);
+    pushDab(medium,p[0]+rand(-brush*.10,brush*.10),p[1]+rand(-brush*.10,brush*.10),
+      brush*.54*pressure,rand(.47,.83),a+rand(-.28,.28),col,rand(.12,.25),
+      chance(.83)?'screen':'source-over');
+   }
+  }
+  // Algunos acentos finales más contenidos, pero nunca dominan el aerógrafo.
+  const threads=integer(1,2);
+  for(let q=0;q<threads;q++){
+   const a=ang+rand(-.68,.68),l=len*rand(.37,.72),brush=side*rand(.035,.085);
+   const path=makePath(cx+rand(-wid*.36,wid*.36),cy+rand(-wid*.36,wid*.36),
+      l,a,rand(.08,.17),integer(15,24),chance(.5)?'flow':'fold');
+   const light=illuminate(chance(.30)?choose(accents):glow,rand(.15,.36));
+   for(let j=0;j<path.length;j++){
+    const p=path[j],t=j/(path.length-1);
+    pushDab(fine,p[0],p[1],brush*(.48+.52*Math.sin(Math.PI*t)),
+      rand(.51,.89),a+rand(-.25,.25),light,rand(.065,.14),'screen');
+   }
+  }
+ }
+ // Los barridos transversales del original son de 150–300 px; no pequeños
+ // puntos aislados. Se integran en la fase grande y mantienen su movimiento.
+ for(let i=0;i<integer(3,5);i++){
+  const ang=rand(-Math.PI,Math.PI),length=Math.max(W,H)*rand(.65,1.1);
+  const x=rand(W*.08,W*.92),y=rand(H*.08,H*.92),brush=side*rand(.16,.29);
+  const pts=makePath(x-Math.cos(ang)*length*.25,y-Math.sin(ang)*length*.25,
+    length,ang,rand(.08,.18),integer(20,33),chance(.44)?'fold':'flow');
+  const col=illuminate(chance(.34)?choose(accents):base,rand(.30,.53));
+  for(let j=0;j<pts.length;j++){
+   const t=j/(pts.length-1),p=pts[j];
+   pushDab(large,p[0],p[1],brush*(.67+.33*Math.sin(Math.PI*t)),
+     rand(.50,.88),ang+rand(-.22,.22),col,rand(.055,.125),'screen');
+  }
+ }
+ openingAirbrush=[...large,...medium,...fine];
+}
+function paintOpeningAirbrush(now){
+ if(!openingAirbrush.length)return;
+ const progress=clamp01((now-startAt)/OPENING_AIRBRUSH_MS);
+ const desired=Math.floor(openingAirbrush.length*progress);
+ if(desired<=openingAirbrushIndex)return;
+ baseCtx.save();
+ for(;openingAirbrushIndex<desired;openingAirbrushIndex++){
+  const dab=openingAirbrush[openingAirbrushIndex];
+  const c=dab.color.map(v=>Math.round(clamp(v,0,255)));
+  const grd=baseCtx.createRadialGradient(0,0,0,0,0,1);
+  grd.addColorStop(0,`rgba(${c[0]},${c[1]},${c[2]},${dab.alpha})`);
+  grd.addColorStop(.27,`rgba(${c[0]},${c[1]},${c[2]},${(dab.alpha*.82).toFixed(4)})`);
+  grd.addColorStop(.56,`rgba(${c[0]},${c[1]},${c[2]},${(dab.alpha*.42).toFixed(4)})`);
+  grd.addColorStop(.83,`rgba(${c[0]},${c[1]},${c[2]},${(dab.alpha*.08).toFixed(4)})`);
+  grd.addColorStop(1,`rgba(${c[0]},${c[1]},${c[2]},0)`);
+  baseCtx.globalCompositeOperation=dab.mode;
+  baseCtx.save();baseCtx.translate(dab.x,dab.y);baseCtx.rotate(dab.angle);
+  baseCtx.scale(dab.r,dab.r*dab.stretch);
+  baseCtx.fillStyle=grd;baseCtx.fillRect(-1,-1,2,2);baseCtx.restore();
+ }
+ baseCtx.restore();
+}
 function backgroundBase(){
- // Arranque de color saturado, sin ennegrecer ni grisear el pigmento protagonista.
+ // Solo color plano al principio: las masas luminosas se CREAN ante el público.
  const base=bg[0];
  baseCtx.fillStyle=rgb(base);baseCtx.fillRect(0,0,W,H);
- atmosphereVeil(baseCtx);
+ prepareOpeningAirbrush(base);
 }
 
-function atmosphereVeil(context){
- // Velos grandes, claros y oscuros, para dar profundidad y misterio desde el fondo.
- for(let i=0;i<4;i++){
-  const cx=rand(W*.08,W*.92),cy=rand(H*.08,H*.92),rx=rand(W*.22,W*.48),ry=rand(H*.18,H*.42);
-  const dark=deepen(choose(bg),rand(.18,.34));
-  const lightCol=illuminate(choose(bg),rand(.10,.22));
-  const grad=context.createRadialGradient(cx-rx*.18,cy-ry*.15,Math.max(8,Math.min(rx,ry)*.10),cx,cy,Math.max(rx,ry));
-  grad.addColorStop(0,rgb(lightCol,.08));
-  grad.addColorStop(.52,rgb(mix(dark,lightCol,.28),.05));
-  grad.addColorStop(1,rgb(dark,.00));
-  context.save();
-  context.fillStyle=grad;
-  // Mancha inicial de contorno libre, no círculo ni óvalo geométrico.
-  // Quiebres, entrantes y prolongaciones cambian en cada nueva obra.
-  const count=integer(13,19), nodes=[],rotation=rand(-Math.PI,Math.PI);
-  const hollow=integer(0,count-1),extension=(hollow+integer(3,7))%count;
-  for(let k=0;k<count;k++){
-    const a=rotation+TAU*(k+rand(-.18,.18))/count;
-    let r=rand(.48,1.02);
-    if(k===hollow || k===(hollow+1)%count)r*=rand(.45,.68);
-    if(k===extension)r*=rand(1.18,1.40);
-    nodes.push([cx+Math.cos(a)*rx*r,cy+Math.sin(a)*ry*r]);
-  }
-  // Un gesto irregular y continuo; las transiciones son pinceladas, no segmentos vectoriales rectos.
-  const last=nodes[nodes.length-1],first=nodes[0];
-  context.beginPath();
-  context.moveTo((last[0]+first[0])/2,(last[1]+first[1])/2);
-  for(let k=0;k<nodes.length;k++){
-    const here=nodes[k],next=nodes[(k+1)%nodes.length];
-    context.quadraticCurveTo(here[0],here[1],(here[0]+next[0])/2,(here[1]+next[1])/2);
-  }
-  context.closePath();
-  context.fill();
-  context.restore();
- }
- // Vignette suave para misterio.
- const vg=context.createRadialGradient(W*.48,H*.44,Math.min(W,H)*.16,W*.5,H*.5,Math.max(W,H)*.78);
- vg.addColorStop(0,'rgba(255,255,255,0)');
- vg.addColorStop(.72,'rgba(22,18,26,0.00)');
- vg.addColorStop(1,'rgba(18,14,22,0.18)');
- context.save(); context.fillStyle=vg; context.fillRect(0,0,W,H); context.restore();
-}
 function makePath(x,y,length,angle,turn=.13,n=35,kind='flow'){
  let px=x,py=y,a=angle,phase=rand(0,TAU),pts=[[x,y]];
  const curl=kind==='fold'?rand(-.15,.15):rand(-.055,.055);
@@ -682,7 +759,12 @@ function drawRealSignature(now){
  ctx.restore();
 }
 
-// La firma se integra de forma definitiva a CADA cuadro antes del guardado y reinicio.
+
+
+// ===== Guardado museo: una sola elección de carpeta; luego guardado automático =====
+// Versión de pantalla: sin permisos de carpeta, sin exportación y sin archivos.
+function queueFinishedPaintingSave(){ /* No guardar nunca. */ }
+
 function finishAndCommitRealSignature(now){
  const last=realSignatureImages[realSignatureImages.length-1];
  // No completar ni guardar un cuadro mientras falte el último fotograma de la firma.
@@ -697,8 +779,7 @@ function finishAndCommitRealSignature(now){
  currentWorkSigned=true;
  phase='hold';
  holdAt=now;
- // En museo guardar exactamente esta capa firmada; en web no se guarda.
- if(typeof outputDirectory!=='undefined' && outputDirectory && typeof queueFinishedPaintingSave==='function')queueFinishedPaintingSave();
+ // La obra firmada se muestra en pantalla, sin crear archivos.
  return true;
 }
 
@@ -781,7 +862,7 @@ function organizeActions(){
    }
  }
  const bgEnd=startAt+(coreEnd-startAt)*.16;
- setTimingAbs(bgActs,startAt,bgEnd);
+ setTimingAbs(bgActs,startAt+OPENING_AIRBRUSH_MS,bgEnd);
  setTimingAbs(formActs,bgEnd,coreEnd);
  setTimingAbs(detailActs,coreEnd,finishAt);
  const softEndingFrom=finishAt-26000;
@@ -1122,6 +1203,7 @@ function frame(now){
     }
     signatureFrameClock=now;
   }else{
+    paintOpeningAirbrush(now);
     paintTo(now);
     timedLiquify(now);
     if(!cycleCompleted && now>=finishAt){
@@ -1139,9 +1221,14 @@ function frame(now){
 }
 function resize(){
  const dw=Math.max(1,innerWidth),dh=Math.max(1,innerHeight);
- // Proporciones libres y alta definición; misma presión proporcional en teléfono y pantalla grande.
+ // Misma composición pictórica aprobada; cambia únicamente la densidad de pantalla.
  W=1200;H=Math.max(540,Math.min(2100,1200*dh/dw));
- const dpx=Math.min(Math.max(devicePixelRatio||1,1),2.2,Math.sqrt(6600000/(dw*dh)));
+ // Coordenadas de la obra original, sin cambios de formas, pinceles o tiempos.
+ // Render adaptado al dispositivo, sin márgenes ni recortes.
+ const nativeDpr=Math.max(1,window.devicePixelRatio||1);
+ // Resolución de pantalla: buena nitidez en móviles y Windows, sin píxeles para imprenta.
+ // Límite de lado largo 2560 px y presupuesto de 3.6 millones de píxeles.
+ const dpx=Math.max(0.6,Math.min(nativeDpr,2,2560/Math.max(dw,dh),Math.sqrt(3600000/(dw*dh))));
  // Escala exacta: la firma no puede quedar fuera de un cuadro estrecho.
  D=dw/W*dpx;
  canvas.width=Math.max(1,Math.round(dw*dpx));
