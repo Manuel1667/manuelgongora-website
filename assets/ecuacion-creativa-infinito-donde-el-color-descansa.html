@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Manuel Góngora — Ecuación Creativa Infinito: Donde el color reposa — Obra viva</title>
+<title>Manuel Góngora — Ecuación Creativa Infinito: Donde el color transluce — Obra viva</title>
 <style>
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:#403347}
-#obra{display:block;position:fixed;inset:0;width:100dvw;height:100dvh;touch-action:none}
+#obra{display:block;position:fixed;touch-action:none}
 #firmaHorizontal{z-index:2;position:fixed;inset:0;width:100vw;height:100vh;width:100dvw;height:100dvh;pointer-events:none}
 
 </style>
 </head>
 <body>
 <canvas id="firmaHorizontal" aria-hidden="true"></canvas>
-<canvas id="obra" aria-label="Ecuación Creativa Infinito — Donde el color reposa. Obra viva que pinta continuamente." role="img"></canvas>
+<canvas id="obra" aria-label="Ecuación Creativa Infinito — Donde el color transluce. Obra viva que pinta continuamente." role="img"></canvas>
 <script>
 'use strict';
 /*
-  ECUACIÓN CREATIVA INFINITO — DONDE EL COLOR REPOSA
+  ECUACIÓN CREATIVA INFINITO — DONDE EL COLOR TRANSLUCE
   Manuel Góngora / versión de pantalla, idéntica pintura a la versión museo
   Proyecto NUEVO independiente de Inteligencia Artificial.
 
@@ -750,9 +750,9 @@ function drawRealSignature(now){
  const logicalHeight=logicalWidth*(184/374)*signatureVariant.height;
  const rect=signatureRectForCorner(signatureCorner,logicalWidth,logicalHeight);
 
- const width=Math.min(innerWidth*.40,Math.max(35,innerWidth*.34));
+ const width=Math.min(displayRect.width*.09,innerWidth*.09);
  const height=width*(184/374)*signatureVariant.height;
- const margin=Math.max(8,Math.min(innerWidth,innerHeight)*.035);
+ const margin=Math.min(innerWidth,innerHeight)*.035;
  // Firma horizontal en la esquina inferior derecha, con margen lateral e inferior iguales.
  const x=innerWidth-width-margin;
  const y=innerHeight-height-margin;
@@ -780,7 +780,7 @@ function drawRealSignature(now){
    firmaCtx.strokeStyle=rgb(signatureColor);
    firmaCtx.shadowColor=signatureGlow;
    firmaCtx.shadowBlur=width*.012*firmaScale;
-   firmaCtx.lineWidth=Math.max(3,width*.021)*firmaScale;
+   firmaCtx.lineWidth=Math.max(1,width*.021)*firmaScale;
    firmaCtx.lineCap='round';
    firmaCtx.beginPath();
    firmaCtx.moveTo((ax-width*.016)*firmaScale,(top-height*.045)*firmaScale);
@@ -1264,21 +1264,30 @@ function frame(now){
  requestAnimationFrame(frame);
 }
 let firmaScale=1;
+// Composición lógica fija: el cambio de tamaño no reinicia ni regenera la obra.
+const ART_W=1200,ART_H=1200/0.735;
+let displayRect={x:0,y:0,width:1,height:1};
 function resize(){
- const dw=Math.max(1,innerWidth),dh=Math.max(1,innerHeight);
- // Edición para teléfono: la obra nace vertical, sin girar ni recortar el lienzo.
- W=1200;H=1200*dh/dw;
- // Resolución de pantalla del teléfono, evitando cargas 4K innecesarias.
- const dpx=Math.max(1,Math.min(2,devicePixelRatio||1,1920/dw,2560/dh));
- D=dw/W*dpx;
- canvas.width=Math.max(1,Math.round(dw*dpx));
- canvas.height=Math.max(1,Math.round(dh*dpx));
- ctx.setTransform(D,0,0,D,0,0);
+ const vw=Math.max(1,innerWidth),vh=Math.max(1,innerHeight);
+ const scale=Math.max(vw/ART_W,vh/ART_H);
+ const drawW=ART_W*scale,drawH=ART_H*scale;
+ displayRect={x:(vw-drawW)/2,y:(vh-drawH)/2,width:drawW,height:drawH};
+ canvas.style.width=drawW+'px';canvas.style.height=drawH+'px';
+ canvas.style.left=displayRect.x+'px';canvas.style.top=displayRect.y+'px';
+ firmaCanvas.width=Math.max(1,Math.round(vw*firmaScale));
+ firmaCanvas.height=Math.max(1,Math.round(vh*firmaScale));
+ // La firma también conserva su escala respecto al lienzo, incluso al ampliar.
+ if(currentWorkSigned && signatureVariant)drawRealSignature(signatureStartedAt+signatureDuration);
+}
+function initializeArtwork(){
+ W=ART_W;H=ART_H;
+ // Resolución moderada para la carga en teléfonos.
+ D=1.5;
+ canvas.width=Math.round(W*D);canvas.height=Math.round(H*D);
  baseLayer.width=canvas.width;baseLayer.height=canvas.height;
- firmaScale=dpx;
- firmaCanvas.width=Math.max(1,Math.round(dw*dpx));
- firmaCanvas.height=Math.max(1,Math.round(dh*dpx));
- resetWork(performance.now());
+ ctx.setTransform(D,0,0,D,0,0);
+ firmaScale=Math.min(2,devicePixelRatio||1);
+ resize();resetWork(performance.now());
 }
 window.addEventListener('resize',()=>{clearTimeout(pendingResize);pendingResize=setTimeout(resize,180)},{passive:true});
 window.addEventListener('keydown',e=>{
@@ -1287,7 +1296,7 @@ window.addEventListener('keydown',e=>{
 });
 window.addEventListener('dblclick',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{})},{passive:true});
 // Versión pública del museo/website: ejecución automática, sin pedir carpeta ni guardar.
-resize();
+initializeArtwork();
 requestAnimationFrame(frame);
 </script>
 </body>
