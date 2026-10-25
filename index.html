@@ -1544,7 +1544,7 @@ body:has(#page-primer-impulso.open) .global-menu{visibility:hidden!important;}
   margin:10px 0 44px;position:relative;left:50%;transform:translateX(-50%);
 }
 #page-primer-impulso .primer-impulso-live-screen{
-  aspect-ratio:2.35/1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  aspect-ratio:1.85/1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   gap:clamp(18px,3.1vw,60px);background:#fff;align-items:stretch;
 }
 #page-primer-impulso .primer-impulso-live-screen iframe{
@@ -1590,7 +1590,7 @@ body:has(#page-primer-impulso.open) .global-menu{visibility:hidden!important;}
     width:94%;max-width:94%;margin:10px 0 28px;
   }
   #page-ecuacion .creative-equation-live-screen{
-    aspect-ratio:.735/1;display:block;
+    aspect-ratio:.65/1;display:block;
   }
   #page-ecuacion .creative-equation-live-screen iframe{
     width:100%;height:100%;
@@ -1634,7 +1634,7 @@ header{position:absolute!important;}
 <main>
 <section class="hero" id="infinito">
 <div class="kicker" data-en="Living artwork · Artificial Intelligence" data-es="Obra viva · Artificial Intelligence" data-fr="Œuvre vivante · Intelligence artificielle" data-it="Opera vivente · Intelligenza Artificiale" data-pt="Obra viva · Inteligência Artificial">Living artwork · Artificial Intelligence</div>
-<div class="box"><div class="screen"><iframe id="art" title="Artificial Intelligence — Infinito I" loading="eager" fetchpriority="high"></iframe><iframe id="art2" title="Artificial Intelligence — Infinito II"></iframe><iframe id="art3" title="Artificial Intelligence — Infinito III"></iframe></div></div>
+<div class="box"><div class="screen"><iframe id="art" title="Artificial Intelligence — Infinito I"></iframe><iframe id="art2" title="Artificial Intelligence — Infinito II"></iframe><iframe id="art3" title="Artificial Intelligence — Infinito III"></iframe></div></div>
 <div class="caption"><h1>Artificial Intelligence Infinito: <em>Devoured by the Signal</em></h1></div>
 </section>
 <section class="content bio-under-work" id="bio"><div class="bio bio-inline"><strong class="bio-name">Manuel Góngora</strong> <span data-en="Cuban-American artist and pioneer in digital painting since 1989, Manuel Góngora presents Infinito, the culminating work of his Artificial Intelligence series.
@@ -2070,16 +2070,16 @@ Construído a partir de seus próprios parâmetros pictóricos — linha, gesto,
 
 <div class="creative-equation-live" aria-label="Ecuación Creativa Infinito — Obra viva">
   <div class="creative-equation-live-screen">
-    <iframe id="creative-equation-art1" title="Ecuación Creativa Infinito — obra viva 1" src="assets/ecuacion-creativa-infinito-donde-el-color-descansa.html" loading="eager"></iframe>
+    <iframe id="creative-equation-art1" title="Ecuación Creativa Infinito — obra viva 1" src="assets/ecuacion-creativa-infinito-donde-el-color-descansa.html" loading="lazy"></iframe>
     <iframe id="creative-equation-art2" title="Ecuación Creativa Infinito — obra viva 2" src="assets/ecuacion-creativa-infinito-donde-el-color-descansa.html" loading="lazy"></iframe>
     <iframe id="creative-equation-art3" title="Ecuación Creativa Infinito — obra viva 3" src="assets/ecuacion-creativa-infinito-donde-el-color-descansa.html" loading="lazy"></iframe>
   </div>
   <div class="creative-equation-live-caption"
-       data-en="Creative Equation Infinito: Where Color Translucently Shines. Living artwork by Manuel Góngora."
-       data-es="Ecuación Creativa Infinito: Donde el color transluce. Obra viva de Manuel Góngora."
+       data-en="Creative Equation Infinito: Where Color Shines Through. Living artwork by Manuel Góngora."
+       data-es="Ecuación Creativa Infinito: Donde el color trasluce. Obra viva de Manuel Góngora."
        data-fr="Équation Créative Infinito : Là où la couleur transparaît. Œuvre vivante de Manuel Góngora."
        data-it="Equazione Creativa Infinito: Dove il colore traspare. Opera vivente di Manuel Góngora."
-       data-pt="Equação Criativa Infinito: Onde a cor transparece. Obra viva de Manuel Góngora.">Creative Equation Infinito: Where Color Translucently Shines. Living artwork by Manuel Góngora.</div>
+       data-pt="Equação Criativa Infinito: Onde a cor transparece. Obra viva de Manuel Góngora.">Creative Equation Infinito: Where Color Shines Through. Living artwork by Manuel Góngora.</div>
 </div>
 <div class="ai-gallery">
 <button class="ai-item" data-full="assets/artwork-7ea011b1cacb7e8a.png" data-parent-view="page-ecuacion" data-title="Encrypted Paradise" type="button">
@@ -2797,7 +2797,6 @@ window.addEventListener('resize',setResponsiveArt);
     frames.forEach((frame,i)=>{
       if(!frame)return;
       if(i<wanted){
-        if(i===0)frame.setAttribute('loading','eager');
         if(frame.getAttribute('src')!==artPath)frame.setAttribute('src',artPath);
       }else{
         if(frame.getAttribute('src')!=='about:blank')frame.setAttribute('src','about:blank');
@@ -2808,6 +2807,48 @@ window.addEventListener('resize',setResponsiveArt);
   new MutationObserver(syncCreativeEquationArtwork).observe(page,{attributes:true,attributeFilter:['class']});
   window.addEventListener('resize',syncCreativeEquationArtwork,{passive:true});
   syncCreativeEquationArtwork();
+})();
+</script>
+
+<!-- Solo teléfonos: tocar una obra viva para ampliarla y volver a tocar para regresar. -->
+<style id="infinito-tap-fullscreen-phone">
+@media(max-width:760px) and (pointer:coarse){
+  #infinito .screen, #page-primer-impulso .primer-impulso-live-screen, #page-ecuacion .creative-equation-live-screen{cursor:pointer;position:relative;}
+  #infinito .screen::before, #page-primer-impulso .primer-impulso-live-screen::before, #page-ecuacion .creative-equation-live-screen::before{content:"";position:absolute;inset:0;z-index:5;touch-action:manipulation;}
+  #infinito .screen.infinito-phone-full, #page-primer-impulso .primer-impulso-live-screen.infinito-phone-full, #page-ecuacion .creative-equation-live-screen.infinito-phone-full{
+    position:fixed!important;inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+    width:100vw!important;width:100dvw!important;height:100vh!important;height:100dvh!important;
+    max-width:none!important;max-height:none!important;aspect-ratio:auto!important;margin:0!important;padding:0!important;
+    transform:none!important;z-index:9999!important;display:block!important;overflow:hidden!important;background:#fff!important;
+  }
+  #infinito .screen.infinito-phone-full iframe, #page-primer-impulso .primer-impulso-live-screen.infinito-phone-full iframe, #page-ecuacion .creative-equation-live-screen.infinito-phone-full iframe{
+    width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;
+  }
+  body.infinito-phone-full-active{overflow:hidden!important;}
+}
+</style>
+<script id="infinito-tap-fullscreen-phone-script">
+(function(){
+  'use strict';
+  const selector='#infinito .screen, #page-primer-impulso .primer-impulso-live-screen, #page-ecuacion .creative-equation-live-screen';
+  const screens=Array.from(document.querySelectorAll(selector));
+  const isPhone=()=>window.matchMedia('(max-width:760px) and (pointer:coarse)').matches;
+  function closeAll(){
+    screens.forEach(screen=>screen.classList.remove('infinito-phone-full'));
+    document.body.classList.remove('infinito-phone-full-active');
+  }
+  screens.forEach(screen=>screen.addEventListener('click',function(event){
+    if(!isPhone())return;
+    event.preventDefault();
+    const wasOpen=screen.classList.contains('infinito-phone-full');
+    closeAll();
+    if(!wasOpen){
+      screen.classList.add('infinito-phone-full');
+      document.body.classList.add('infinito-phone-full-active');
+    }
+  }));
+  window.addEventListener('resize',()=>{if(!isPhone())closeAll();},{passive:true});
+  document.querySelectorAll('.page-back,.series-page-back').forEach(button=>button.addEventListener('click',closeAll));
 })();
 </script>
 </body></html>
