@@ -1625,6 +1625,14 @@ header{position:absolute!important;}
   #home-living-phone .home-living-screen.infinito-phone-full iframe{width:100%!important;height:100%!important;}
 }
 </style>
+<style id="desktop-home-triptych-three-different-infinito">
+/* Solo Windows/escritorio: izquierda Ecuación Creativa, centro AI, derecha Primer Impulso. */
+@media(min-width:761px){
+  #infinito #art2{order:1;}
+  #infinito #art{order:2;}
+  #infinito #art3{order:3;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1656,11 +1664,11 @@ header{position:absolute!important;}
 <!-- Únicamente teléfono: las otras dos obras vivas debajo de AI, antes de las demás secciones. -->
 <section id="home-living-phone" aria-label="Obras vivas de INFINITO">
   <div class="home-living-entry">
-    <div class="home-living-screen"><iframe id="home-ecuacion-art" title="Ecuación Creativa INFINITO — Donde el color trasluce" loading="lazy"></iframe></div>
+    <div class="home-living-screen"><iframe id="home-ecuacion-art" loading="lazy" title="Ecuación Creativa INFINITO — Donde el color trasluce" loading="lazy"></iframe></div>
     <div class="home-living-caption" data-en="Creative Equation INFINITO: Where Color Shines Through" data-es="Ecuación Creativa INFINITO: Donde el color trasluce" data-fr="Équation Créative INFINITO : Là où la couleur transparaît" data-it="Equazione Creativa INFINITO: Dove il colore traspare" data-pt="Equação Criativa INFINITO: Onde a cor transparece">Creative Equation INFINITO: Where Color Shines Through</div>
   </div>
   <div class="home-living-entry">
-    <div class="home-living-screen"><iframe id="home-primer-art" title="INFINITO — El Primer Impulso" loading="lazy"></iframe></div>
+    <div class="home-living-screen"><iframe id="home-primer-art" loading="lazy" title="INFINITO — El Primer Impulso" loading="lazy"></iframe></div>
     <div class="home-living-caption" data-en="INFINITO: The First Impulse" data-es="INFINITO: El Primer Impulso" data-fr="INFINITO : La Première Impulsion" data-it="INFINITO: Il Primo Impulso" data-pt="INFINITO: O Primeiro Impulso">INFINITO: The First Impulse</div>
   </div>
 </section>
@@ -2718,20 +2726,38 @@ const art=document.getElementById('art');
 const art2=document.getElementById('art2');
 const art3=document.getElementById('art3');
 const aiInfinitoThumb=document.getElementById('ai-infinito-thumb');
-if(aiInfinitoThumb) aiInfinitoThumb.src=PHONE_ART;
-let currentArt='';
+// Primero aparece el sitio y AI; las otras obras se cargan sin bloquear la apertura.
+const ECUACION_ART='assets/ecuacion-creativa-infinito-donde-el-color-descansa.html';
+const PRIMER_ART='el-primer-impulso/el-primer-impulso3.html?v=evolucion-20261016';
 function setResponsiveArt(){
-  const phone=window.matchMedia('(max-width: 760px) and (orientation: portrait)').matches;
-  const next=PHONE_ART;
-  if(next!==currentArt){
-    currentArt=next;
-    art.src=next;
-    if(art2) art2.src=next;
-    if(art3) art3.src=next;
-  }
+  if(!art.getAttribute('src'))art.src=PHONE_ART;
 }
 setResponsiveArt();
-window.addEventListener('resize',setResponsiveArt);
+// Evitar descargar dos obras invisibles del tríptico en teléfono.
+function startDesktopTriptych(){
+  if(!window.matchMedia('(min-width:761px)').matches)return;
+  if(art2&&!art2.getAttribute('src'))art2.src=ECUACION_ART;
+  if(art3&&!art3.getAttribute('src'))art3.src=PRIMER_ART;
+}
+function scheduleDesktopTriptych(){
+  if('requestIdleCallback' in window)requestIdleCallback(startDesktopTriptych,{timeout:1500});
+  else setTimeout(startDesktopTriptych,250);
+}
+if(document.readyState==='complete')scheduleDesktopTriptych();
+else window.addEventListener('load',scheduleDesktopTriptych,{once:true});
+window.addEventListener('resize',scheduleDesktopTriptych,{passive:true});
+// La miniatura de AI solo se descarga al aproximarse a su galería.
+if(aiInfinitoThumb){
+  if('IntersectionObserver' in window){
+    const thumbObserver=new IntersectionObserver(entries=>{
+      if(entries.some(e=>e.isIntersecting)){
+        if(!aiInfinitoThumb.getAttribute('src'))aiInfinitoThumb.src=PHONE_ART;
+        thumbObserver.disconnect();
+      }
+    },{rootMargin:'300px'});
+    thumbObserver.observe(aiInfinitoThumb);
+  }else aiInfinitoThumb.src=PHONE_ART;
+}
 </script>
 <script>
 /* Mobile Home: use the same representative painting assigned to each series in Paintings. */
