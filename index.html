@@ -1609,6 +1609,22 @@ header{position:absolute!important;}
 .series-page .series-page-top,
 .biography-top{position:relative!important;}
 </style>
+<style id="home-three-living-artworks-phone-only">
+#home-living-phone{display:none;}
+@media(max-width:760px) and (pointer:coarse){
+  #home-living-phone{display:block;padding:0 0 24px;}
+  #home-living-phone .home-living-entry{width:calc(94% - 0px);margin:0 auto 28px;}
+  #home-living-phone .home-living-screen{position:relative;width:100%;aspect-ratio:.65/1;background:#fff;overflow:hidden;cursor:pointer;}
+  #home-living-phone .home-living-screen iframe{display:block;width:100%;height:100%;border:0;pointer-events:none;}
+  #home-living-phone .home-living-caption{font:400 14px/1.38 Georgia,serif;margin-top:6px;}
+  #home-living-phone .home-living-screen.infinito-phone-full{
+    position:fixed!important;inset:0!important;width:100dvw!important;height:100dvh!important;
+    max-width:none!important;max-height:none!important;aspect-ratio:auto!important;
+    margin:0!important;padding:0!important;z-index:9999!important;background:#fff!important;
+  }
+  #home-living-phone .home-living-screen.infinito-phone-full iframe{width:100%!important;height:100%!important;}
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1636,6 +1652,17 @@ header{position:absolute!important;}
 <div class="kicker" data-en="Living artwork · Artificial Intelligence" data-es="Obra viva · Artificial Intelligence" data-fr="Œuvre vivante · Intelligence artificielle" data-it="Opera vivente · Intelligenza Artificiale" data-pt="Obra viva · Inteligência Artificial">Living artwork · Artificial Intelligence</div>
 <div class="box"><div class="screen"><iframe id="art" title="Artificial Intelligence — Infinito I"></iframe><iframe id="art2" title="Artificial Intelligence — Infinito II"></iframe><iframe id="art3" title="Artificial Intelligence — Infinito III"></iframe></div></div>
 <div class="caption"><h1>Artificial Intelligence Infinito: <em>Devoured by the Signal</em></h1></div>
+</section>
+<!-- Únicamente teléfono: las otras dos obras vivas debajo de AI, antes de las demás secciones. -->
+<section id="home-living-phone" aria-label="Obras vivas de INFINITO">
+  <div class="home-living-entry">
+    <div class="home-living-screen"><iframe id="home-ecuacion-art" title="Ecuación Creativa INFINITO — Donde el color trasluce" loading="lazy"></iframe></div>
+    <div class="home-living-caption" data-en="Creative Equation INFINITO: Where Color Shines Through" data-es="Ecuación Creativa INFINITO: Donde el color trasluce" data-fr="Équation Créative INFINITO : Là où la couleur transparaît" data-it="Equazione Creativa INFINITO: Dove il colore traspare" data-pt="Equação Criativa INFINITO: Onde a cor transparece">Creative Equation INFINITO: Where Color Shines Through</div>
+  </div>
+  <div class="home-living-entry">
+    <div class="home-living-screen"><iframe id="home-primer-art" title="INFINITO — El Primer Impulso" loading="lazy"></iframe></div>
+    <div class="home-living-caption" data-en="INFINITO: The First Impulse" data-es="INFINITO: El Primer Impulso" data-fr="INFINITO : La Première Impulsion" data-it="INFINITO: Il Primo Impulso" data-pt="INFINITO: O Primeiro Impulso">INFINITO: The First Impulse</div>
+  </div>
 </section>
 <section class="content bio-under-work" id="bio"><div class="bio bio-inline"><strong class="bio-name">Manuel Góngora</strong> <span data-en="Cuban-American artist and pioneer in digital painting since 1989, Manuel Góngora presents Infinito, the culminating work of his Artificial Intelligence series.
 Built from his own pictorial parameters—line, gesture, composition, rhythm, form, balance, distortion, and decision rules—Infinito continuously creates new paintings faithful to Góngora’s style, as an extension of his own hand. Conceived by Manuel Góngora, it was created so his artistic language can continue creating beyond his lifetime. Infinito is a generative artwork created by Manuel Góngora, based on his pictorial language." data-es="Artista cubanoamericano y pionero en pintura digital desde 1989, Manuel Góngora presenta Infinito, la obra cumbre de su serie Inteligencia Artificial.
@@ -2830,7 +2857,7 @@ window.addEventListener('resize',setResponsiveArt);
 <script id="infinito-tap-fullscreen-phone-script">
 (function(){
   'use strict';
-  const selector='#infinito .screen, #page-primer-impulso .primer-impulso-live-screen, #page-ecuacion .creative-equation-live-screen';
+  const selector='#infinito .screen, #page-primer-impulso .primer-impulso-live-screen, #page-ecuacion .creative-equation-live-screen, #home-living-phone .home-living-screen';
   const screens=Array.from(document.querySelectorAll(selector));
   const isPhone=()=>window.matchMedia('(max-width:760px) and (pointer:coarse)').matches;
   function closeAll(){
@@ -2849,6 +2876,30 @@ window.addEventListener('resize',setResponsiveArt);
   }));
   window.addEventListener('resize',()=>{if(!isPhone())closeAll();},{passive:true});
   document.querySelectorAll('.page-back,.series-page-back').forEach(button=>button.addEventListener('click',closeAll));
+})();
+</script>
+<script id="home-living-artworks-phone-loader">
+(function(){
+  'use strict';
+  const entries=[
+    ['home-ecuacion-art','assets/ecuacion-creativa-infinito-donde-el-color-descansa.html'],
+    ['home-primer-art','el-primer-impulso/el-primer-impulso3.html?v=evolucion-20261016']
+  ];
+  const phone=()=>window.matchMedia('(max-width:760px) and (pointer:coarse)').matches;
+  const load=(frame,src)=>{if(phone()&&!frame.getAttribute('src'))frame.setAttribute('src',src);};
+  if('IntersectionObserver' in window){
+    const observer=new IntersectionObserver((items)=>{
+      items.forEach(item=>{
+        if(!item.isIntersecting)return;
+        const entry=entries.find(([id])=>id===item.target.id);
+        if(entry)load(item.target,entry[1]);
+        observer.unobserve(item.target);
+      });
+    },{rootMargin:'500px 0px'});
+    entries.forEach(([id])=>{const frame=document.getElementById(id);if(frame)observer.observe(frame);});
+  }else{
+    entries.forEach(([id,src])=>{const frame=document.getElementById(id);if(frame)load(frame,src);});
+  }
 })();
 </script>
 </body></html>
