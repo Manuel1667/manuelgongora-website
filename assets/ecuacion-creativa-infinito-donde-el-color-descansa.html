@@ -6,11 +6,13 @@
 <title>Manuel Góngora — Ecuación Creativa Infinito: Donde el color reposa — Obra viva</title>
 <style>
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:#403347}
-canvas{display:block;width:100vw;height:100vh;width:100dvw;height:100dvh;touch-action:none}
+#obra{display:block;position:fixed;inset:0;width:100dvw;height:100dvh;touch-action:none}
+#firmaHorizontal{z-index:2;position:fixed;inset:0;width:100vw;height:100vh;width:100dvw;height:100dvh;pointer-events:none}
 
 </style>
 </head>
 <body>
+<canvas id="firmaHorizontal" aria-hidden="true"></canvas>
 <canvas id="obra" aria-label="Ecuación Creativa Infinito — Donde el color reposa. Obra viva que pinta continuamente." role="img"></canvas>
 <script>
 'use strict';
@@ -27,6 +29,8 @@ canvas{display:block;width:100vw;height:100vh;width:100dvw;height:100dvh;touch-a
 */
 const canvas=document.getElementById('obra');
 const ctx=canvas.getContext('2d',{alpha:false});
+const firmaCanvas=document.getElementById('firmaHorizontal');
+const firmaCtx=firmaCanvas.getContext('2d',{alpha:true});
 const baseLayer=document.createElement('canvas');
 const baseCtx=baseLayer.getContext('2d',{alpha:false});
 const TAU=2*Math.PI;
@@ -132,7 +136,7 @@ function prepareComposition(){
 // «El Primer Impulso» SIN MODIFICAR ESA OBRA, y SIN estampar una foto estática.
 // Secuencia visible: grandes masas de luz -> barridos medianos -> veladuras finas.
 // Se conservan intactas las formas, gestos, colores posteriores y guardado JPG 600 DPI.
-const OPENING_AIRBRUSH_MS=3900;
+const OPENING_AIRBRUSH_MS=1950;
 let openingAirbrush=[],openingAirbrushIndex=0;
 function prepareOpeningAirbrush(base){
  const large=[],medium=[],fine=[];
@@ -265,7 +269,7 @@ function strokePressure(t,form){
 }
 function strokePoints(pts,width,color,opts={}){
  return {
-  pts, width,color,alpha:opts.alpha??rand(.55,.92),
+  pts, width,color,alpha:Math.max(.10,Math.min(.75,(opts.alpha??rand(.10,.75)) * rand(1.15,1.75))),
   precision:opts.precision??1,
   blend:opts.blend||null,
   edgeSoft:opts.edgeSoft??(opts.kind==='background'?1:.72),
@@ -426,7 +430,7 @@ function buildMainForms(){
 }
 function detailAlpha(){
  // Detalles muy translúcidos: entre 10% y 30% de opacidad.
- return rand(.10,.30);
+ return rand(.20,.38);
 }
 function detailColor(base){
  // Los detalles deben dialogar con el cuadro usando sobre todo los complementarios de los colores dominantes.
@@ -741,22 +745,50 @@ function drawRealSignature(now){
  const ix=Math.min(realSignatureImages.length-1,Math.floor(fraction*(realSignatureImages.length-1)));
  const img=realSignatureImages[ix];
  if(!img.complete||!img.naturalWidth)return;
- const width=W*.13*signatureVariant.width;
+ // La pintura conserva su geometría vertical girada; la firma se ve horizontal.
+ const logicalWidth=W*.13*signatureVariant.width;
+ const logicalHeight=logicalWidth*(184/374)*signatureVariant.height;
+ const rect=signatureRectForCorner(signatureCorner,logicalWidth,logicalHeight);
+
+ const width=Math.min(innerWidth*.40,Math.max(35,innerWidth*.34));
  const height=width*(184/374)*signatureVariant.height;
- const rect=signatureRectForCorner(signatureCorner,width,height);
- const x=rect.x,y=rect.y;
+ const margin=Math.max(8,Math.min(innerWidth,innerHeight)*.035);
+ // Firma horizontal en la esquina inferior derecha, con margen lateral e inferior iguales.
+ const x=innerWidth-width-margin;
+ const y=innerHeight-height-margin;
  const tinted=tintSignatureImage(img,signatureColor);
- ctx.save();
- ctx.translate(x+width*.5,y+height*.5);
- ctx.transform(1,signatureVariant.shear,signatureVariant.tilt,1,0,0);
- ctx.globalAlpha=.42;
- ctx.shadowColor=signatureGlow;
- ctx.shadowBlur=Math.max(10,width*.10);
- ctx.drawImage(tinted,-width*.5,-height*.5,width,height);
- ctx.globalAlpha=.98;
- ctx.shadowBlur=Math.max(3,width*.03);
- ctx.drawImage(tinted,-width*.5,-height*.5,width,height);
- ctx.restore();
+ firmaCtx.clearRect(0,0,firmaCanvas.width,firmaCanvas.height);
+ firmaCtx.save();
+ firmaCtx.translate((x+width*.5)*firmaScale,(y+height*.5)*firmaScale);
+ firmaCtx.transform(1,signatureVariant.shear,signatureVariant.tilt,1,0,0);
+ firmaCtx.globalAlpha=.42;
+ firmaCtx.shadowColor=signatureGlow;
+ firmaCtx.shadowBlur=Math.max(10,width*.10)*firmaScale;
+ firmaCtx.drawImage(tinted,-width*.5*firmaScale,-height*.5*firmaScale,width*firmaScale,height*firmaScale);
+ firmaCtx.globalAlpha=.98;
+ firmaCtx.shadowBlur=Math.max(3,width*.03)*firmaScale;
+ firmaCtx.drawImage(tinted,-width*.5*firmaScale,-height*.5*firmaScale,width*firmaScale,height*firmaScale);
+ // El acento se agrega AL FINAL, separado de la imagen de la firma,
+ // para que nunca quede oculto por los fotogramas del trazo.
+ firmaCtx.restore();
+ if(fraction>.985){
+   // La primera O real de la firma está al 27% de la imagen (no al 39%).
+   // Acento agudo añadido después de que Góngora esté completamente escrito.
+   const ax=x+width*.275, top=y+height*.065;
+   firmaCtx.save();
+   firmaCtx.globalAlpha=1;
+   firmaCtx.strokeStyle=rgb(signatureColor);
+   firmaCtx.shadowColor=signatureGlow;
+   firmaCtx.shadowBlur=width*.012*firmaScale;
+   firmaCtx.lineWidth=Math.max(3,width*.021)*firmaScale;
+   firmaCtx.lineCap='round';
+   firmaCtx.beginPath();
+   firmaCtx.moveTo((ax-width*.016)*firmaScale,(top-height*.045)*firmaScale);
+   firmaCtx.quadraticCurveTo((ax+width*.002)*firmaScale,(top-height*.16)*firmaScale,(ax+width*.038)*firmaScale,(top-height*.27)*firmaScale);
+   firmaCtx.stroke();
+   firmaCtx.restore();
+ }
+
 }
 
 
@@ -771,11 +803,7 @@ function finishAndCommitRealSignature(now){
  if(!last || !last.complete || !last.naturalWidth)return false;
  compositeBase();
  drawRealSignature(signatureStartedAt+signatureDuration);
- // La capa original queda firmada, no solo el canvas visible.
- baseCtx.save();
- baseCtx.setTransform(1,0,0,1,0,0);
- baseCtx.drawImage(canvas,0,0,baseLayer.width,baseLayer.height);
- baseCtx.restore();
+ // La firma permanece en una capa horizontal independiente.
  currentWorkSigned=true;
  phase='hold';
  holdAt=now;
@@ -850,7 +878,7 @@ function organizeActions(){
  const rawDetailActs=actions.filter(a=>a.stage==='detail');
  const detailActs=rawDetailActs.filter((a,i)=> i===0 || Math.random()<.50);
  // La obra principal se simplifica: la mitad aproximada de líneas y menos tiempo total.
- const coreEnd=mainFinishAt||finishAt;
+ const coreEnd=finishAt;
  function setTimingAbs(items,fromMs,toMs){
    const span=Math.max(1,toMs-fromMs);
    const weights=items.map(x=>x.stroke.duration),sum=weights.reduce((a,b)=>a+b,0)||1;
@@ -863,14 +891,15 @@ function organizeActions(){
  }
  const bgEnd=startAt+(coreEnd-startAt)*.16;
  setTimingAbs(bgActs,startAt+OPENING_AIRBRUSH_MS,bgEnd);
- setTimingAbs(formActs,bgEnd,coreEnd);
- setTimingAbs(detailActs,coreEnd,finishAt);
+ const formEnd=bgEnd+(finishAt-bgEnd)*.83;
+ setTimingAbs(formActs,bgEnd,formEnd);
+ setTimingAbs(detailActs,formEnd,finishAt);
  const softEndingFrom=finishAt-26000;
  for(const a of formActs){
   if(a.to<=softEndingFrom || a.to>finishAt) continue;
   const progress=clamp01((a.to-softEndingFrom)/26000);
   const maxAlpha=lerp(.24,.12,progress);
-  a.stroke.alpha=Math.min(a.stroke.alpha,maxAlpha*rand(.84,1.0));
+  a.stroke.alpha=Math.max(.20,Math.min(.50,a.stroke.alpha,maxAlpha*rand(.84,1.0)));
  }
  softenLastFiveSecondsDetails(detailActs,finishAt);
  bgEndAt=bgActs.length?bgActs[bgActs.length-1].to:bgEnd;
@@ -956,18 +985,24 @@ function paintRibbon(context,s,pointLimit){
  grad.addColorStop(1,rgb(illuminate(lift,.10)));
  // Borde húmedo / degradé: una primera pasada suave, luego el cuerpo del color.
  const blur=s.kind==='background'?16:s.kind==='form'?Math.max(.15,Math.min(1,s.width*.02*(s.edgeSoft||.06))):Math.max(1.4,Math.min(13,s.width*.11*(s.edgeSoft||.7)));
- if(s.kind!=='background')modelStroke(context,s,left,right,count);
- context.globalAlpha=s.alpha*(s.kind==='detail'?.26:s.kind==='form'?.34:.22);
+ // La sombra tambien debe ser transparente: antes se pintaba casi opaca.
+ if(s.kind!=='background'){
+  context.save();
+  context.globalAlpha=Math.min(.75,s.alpha*.38);
+  modelStroke(context,s,left,right,count);
+  context.restore();
+ }
+ context.globalAlpha=s.alpha*.08;
  context.filter=`blur(${blur}px)`;
  path();
  context.fillStyle=grad;context.fill();
  context.filter='none';
- context.globalAlpha=s.alpha;
+ context.globalAlpha=Math.min(.75,Math.max(.10,s.alpha));
  path();
  context.fillStyle=grad;context.fill();
  // Mezcla ligera de color, principalmente hacia los bordes y el centro de la pincelada.
  if(s.blend){
-  context.globalAlpha=s.alpha*(s.kind==='detail'?.10:s.kind==='form'?.24:.16);
+  context.globalAlpha=s.alpha*.07;
   const grad2=context.createLinearGradient(p1[0],p1[1],p0[0]+.01,p0[1]+.01);
   grad2.addColorStop(0,rgb(illuminate(s.blend,.24)));
   grad2.addColorStop(.42,rgb(s.blend));
@@ -977,7 +1012,7 @@ function paintRibbon(context,s,pointLimit){
  }
  // Luz interior suave para que no se vea plano.
  if(s.kind!=='background'){
-  context.globalAlpha=s.alpha*(s.kind==='detail'?.08:s.kind==='form'?.16:.10);
+  context.globalAlpha=s.alpha*.05;
   const inner=context.createLinearGradient(p0[0]-s.width*.10,p0[1]-s.width*.10,p1[0]+s.width*.10,p1[1]+s.width*.10);
   inner.addColorStop(0,rgb(illuminate(s.color,.22),0));
   inner.addColorStop(.32,rgb(illuminate(s.color,.30),.10));
@@ -988,7 +1023,7 @@ function paintRibbon(context,s,pointLimit){
  }
  // La veta forma parte de la pintura, no añade grupos de pelos.
  if(s.sheen&&s.width>11&&count>=5){
-  context.globalAlpha=s.alpha*.18;
+  context.globalAlpha=s.alpha*.05;
   context.strokeStyle=rgb(illuminate(s.blend||s.color,.41));
   context.lineWidth=Math.max(.5,Math.min(2.2,s.width*.014));
   context.lineCap='butt';
@@ -1022,6 +1057,8 @@ function liquifyRegion(context,x,y,rw,rh,maxPct=.05){
  let sx=Math.max(0,Math.floor(x*D)),sy=Math.max(0,Math.floor(y*D));
  let sw=Math.min(baseLayer.width-sx,Math.floor(rw*D)),sh=Math.min(baseLayer.height-sy,Math.floor(rh*D));
  if(sw<16||sh<16)return;
+ // Evita bloquear la animación con un remuestreo de millones de píxeles en un solo gesto.
+ if(sw*sh>1250000)return;
  let src=context.getImageData(sx,sy,sw,sh),dst=context.createImageData(sw,sh);
  let a=src.data,b=dst.data,amp=Math.min(sw,sh)*clamp(maxPct,.004,.13)*rand(.48,.82);
  let horizontal=Math.random()<.5,sign=Math.random()<.5?-1:1;
@@ -1114,7 +1151,7 @@ function applyLiquifyEvent(phase){
  compositeBase();
 }
 function timedLiquify(now){
- while(liquifyIndex<liquifyEvents.length && now>=liquifyEvents[liquifyIndex].time){
+ if(liquifyIndex<liquifyEvents.length && now>=liquifyEvents[liquifyIndex].time){
    applyLiquifyEvent(liquifyEvents[liquifyIndex].phase);
    liquifyIndex++;
  }
@@ -1147,7 +1184,7 @@ function paintTo(now){
  // La base guarda los gestos ya terminados. El trazo activo se dibuja entero
  // hasta la posicion actual: sin divisiones, rayas ni cortes entre segmentos.
  let changes=0;
- while(actionIndex<actions.length && now>=actions[actionIndex].to && changes<300){
+ while(actionIndex<actions.length && now>=actions[actionIndex].to && changes<1){
   const s=actions[actionIndex].stroke;
   paintRibbon(baseCtx,s,s.pts.length-1);
   if(s.kind==='form') liquifyFormStroke(baseCtx,s);
@@ -1173,7 +1210,9 @@ function paintTo(now){
   }
  }
 }
+let paintingClock=0,lastPaintingFrame=0;
 function resetWork(now=performance.now()){
+  paintingClock=now;lastPaintingFrame=now;
   workNo++;
   preparePalette();prepareComposition();
   ctx.setTransform(D,0,0,D,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
@@ -1181,9 +1220,10 @@ function resetWork(now=performance.now()){
   backgroundBase();compositeBase();actions=[];actionIndex=0;completed=0;liquifyPool=[];
   bgPool=[];formPool=[];detailPool=[];liquifyEvents=[];liquifyIndex=0;
   // Conserva el ritmo de la versión rápida, pero detiene la pintura 15 s antes.
-  startAt=now;mainFinishAt=now+rand(90000,135000)+2500;finishAt=mainFinishAt-7500;
+  startAt=now;mainFinishAt=now+rand(45000,67500)+1250;finishAt=mainFinishAt-7500;
   holdAt=0;phase='paint';cycleCompleted=false;
   currentWorkSigned=false;
+  firmaCtx.clearRect(0,0,firmaCanvas.width,firmaCanvas.height);
   signatureStartedAt=0;signatureVariant=null;
   buildBackground();buildMainForms();organizeActions();prepareLiquifyPlan();
 }
@@ -1194,7 +1234,7 @@ function frame(now){
     if(currentWorkSigned && now-holdAt>=2000) resetWork(now);
   }else if(phase==='sign'){
     // El gesto avanza solo mientras realmente se dibuja; evita saltos de reloj en pantallas lentas.
-    if(realSignatureImages.every(img=>img.complete && img.naturalWidth)){
+    if(realSignatureImages[realSignatureImages.length-1]?.complete && realSignatureImages[realSignatureImages.length-1]?.naturalWidth){
       // Tiempo real, también con tres cuadros en Windows: cada ciclo firma.
       signatureElapsed=Math.min(signatureDuration,Math.max(0,now-signatureStartedAt));
       compositeBase();
@@ -1203,11 +1243,14 @@ function frame(now){
     }
     signatureFrameClock=now;
   }else{
-    paintOpeningAirbrush(now);
-    paintTo(now);
-    timedLiquify(now);
-    if(!cycleCompleted && now>=finishAt){
-      paintTo(finishAt+4000);
+    // El reloj pictórico solo avanza un paso corto por fotograma:
+    // nunca se amontonan trazos al ralentizarse la pantalla.
+    paintingClock+=Math.min(32,Math.max(0,now-lastPaintingFrame));
+    lastPaintingFrame=now;
+    paintOpeningAirbrush(paintingClock);
+    paintTo(paintingClock);
+    timedLiquify(paintingClock);
+    if(!cycleCompleted && paintingClock>=finishAt && actionIndex>=actions.length && openingAirbrushIndex>=openingAirbrush.length){
       compositeBase();
       startRealSignature(now);
       cycleCompleted=true;
@@ -1217,24 +1260,24 @@ function frame(now){
     }
   }
  }
+ if(paused)lastPaintingFrame=now;
  requestAnimationFrame(frame);
 }
+let firmaScale=1;
 function resize(){
  const dw=Math.max(1,innerWidth),dh=Math.max(1,innerHeight);
- // Misma composición pictórica aprobada; cambia únicamente la densidad de pantalla.
- W=1200;H=Math.max(540,Math.min(2100,1200*dh/dw));
- // Coordenadas de la obra original, sin cambios de formas, pinceles o tiempos.
- // Render adaptado al dispositivo, sin márgenes ni recortes.
- const nativeDpr=Math.max(1,window.devicePixelRatio||1);
- // Resolución de pantalla: buena nitidez en móviles y Windows, sin píxeles para imprenta.
- // Límite de lado largo 2560 px y presupuesto de 3.6 millones de píxeles.
- const dpx=Math.max(0.6,Math.min(nativeDpr,2,2560/Math.max(dw,dh),Math.sqrt(3600000/(dw*dh))));
- // Escala exacta: la firma no puede quedar fuera de un cuadro estrecho.
+ // Edición para teléfono: la obra nace vertical, sin girar ni recortar el lienzo.
+ W=1200;H=1200*dh/dw;
+ // Resolución de pantalla del teléfono, evitando cargas 4K innecesarias.
+ const dpx=Math.max(1,Math.min(2,devicePixelRatio||1,1920/dw,2560/dh));
  D=dw/W*dpx;
  canvas.width=Math.max(1,Math.round(dw*dpx));
  canvas.height=Math.max(1,Math.round(dh*dpx));
  ctx.setTransform(D,0,0,D,0,0);
  baseLayer.width=canvas.width;baseLayer.height=canvas.height;
+ firmaScale=dpx;
+ firmaCanvas.width=Math.max(1,Math.round(dw*dpx));
+ firmaCanvas.height=Math.max(1,Math.round(dh*dpx));
  resetWork(performance.now());
 }
 window.addEventListener('resize',()=>{clearTimeout(pendingResize);pendingResize=setTimeout(resize,180)},{passive:true});
