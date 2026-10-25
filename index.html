@@ -1633,6 +1633,18 @@ header{position:absolute!important;}
   #infinito #art3{order:3;}
 }
 </style>
+<style id="infinito-desktop-individual-titles">
+.infinito-desktop-titles{display:none;}
+@media(min-width:761px){
+  #infinito>.caption{display:none!important;}
+  #infinito>.infinito-desktop-titles{
+    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:clamp(18px,3.1vw,60px);width:min(80vw,1540px);
+    margin-top:7px;font:400 clamp(11px,1.15vw,18px)/1.3 Georgia,serif;
+    text-align:left;align-items:start;
+  }
+}
+</style>
 </head>
 <body>
 <header><div></div><div class="brand"><strong>GÓNGORA</strong></div></header>
@@ -1660,6 +1672,11 @@ header{position:absolute!important;}
 <div class="kicker" data-en="Living artwork · Artificial Intelligence" data-es="Obra viva · Artificial Intelligence" data-fr="Œuvre vivante · Intelligence artificielle" data-it="Opera vivente · Intelligenza Artificiale" data-pt="Obra viva · Inteligência Artificial">Living artwork · Artificial Intelligence</div>
 <div class="box"><div class="screen"><iframe id="art" title="Artificial Intelligence — Infinito I"></iframe><iframe id="art2" title="Artificial Intelligence — Infinito II"></iframe><iframe id="art3" title="Artificial Intelligence — Infinito III"></iframe></div></div>
 <div class="caption"><h1>Artificial Intelligence Infinito: <em>Devoured by the Signal</em></h1></div>
+<div class="infinito-desktop-titles" aria-label="Títulos de las tres obras vivas">
+  <div data-en="Creative Equation INFINITO: Where Color Shines Through" data-es="Ecuación Creativa INFINITO: Donde el color trasluce" data-fr="Équation Créative INFINITO : Là où la couleur transparaît" data-it="Equazione Creativa INFINITO: Dove il colore traspare" data-pt="Equação Criativa INFINITO: Onde a cor transparece">Creative Equation INFINITO: Where Color Shines Through</div>
+  <div data-en="Artificial Intelligence INFINITO: Devoured by the Signal" data-es="Inteligencia Artificial INFINITO: Devorados por la Señal" data-fr="Intelligence Artificielle INFINITO : Dévorés par le Signal" data-it="Intelligenza Artificiale INFINITO: Divorati dal Segnale" data-pt="Inteligência Artificial INFINITO: Devorados pelo Sinal">Artificial Intelligence INFINITO: Devoured by the Signal</div>
+  <div data-en="Creative Equation INFINITO: The First Impulse" data-es="Ecuación Creativa INFINITO: El Primer Impulso" data-fr="Équation Créative INFINITO : La Première Impulsion" data-it="Equazione Creativa INFINITO: Il Primo Impulso" data-pt="Equação Criativa INFINITO: O Primeiro Impulso">Creative Equation INFINITO: The First Impulse</div>
+</div>
 </section>
 <!-- Únicamente teléfono: las otras dos obras vivas debajo de AI, antes de las demás secciones. -->
 <section id="home-living-phone" aria-label="Obras vivas de INFINITO">
