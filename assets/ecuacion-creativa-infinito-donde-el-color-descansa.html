@@ -753,9 +753,9 @@ function drawRealSignature(now){
  const width=Math.min(displayRect.width*.09,innerWidth*.09);
  const height=width*(184/374)*signatureVariant.height;
  const margin=Math.min(innerWidth,innerHeight)*.035;
- // Firma horizontal en la esquina inferior derecha, con margen lateral e inferior iguales.
- const x=innerWidth-width-margin;
- const y=innerHeight-height-margin;
+ // Situar la firma en la esquina más despejada elegida para esta obra.
+ const x=signatureCorner.endsWith('r')?innerWidth-width-margin:margin;
+ const y=signatureCorner.startsWith('b')?innerHeight-height-margin:margin;
  const tinted=tintSignatureImage(img,signatureColor);
  firmaCtx.clearRect(0,0,firmaCanvas.width,firmaCanvas.height);
  firmaCtx.save();
@@ -795,7 +795,68 @@ function drawRealSignature(now){
 
 // ===== Guardado museo: una sola elección de carpeta; luego guardado automático =====
 // Versión de pantalla: sin permisos de carpeta, sin exportación y sin archivos.
-function queueFinishedPaintingSave(){ /* No guardar nunca. */ }
+
+// Guardado automático JPG 600 DPI: elegir carpeta una sola vez.
+let outputDirectory=null;
+let saveInProgress=Promise.resolve();
+async function selectOutputDirectory(){
+  if(!window.showDirectoryPicker){alert('Para guardar automáticamente en una carpeta, abre este programa en Chrome o Edge en Windows.');return;}
+  try{
+    outputDirectory=await window.showDirectoryPicker({mode:'readwrite'});
+    // Carpeta elegida: guardar automáticamente al terminar cada obra.
+  }catch(e){if(e.name!=='AbortError')console.error('Carpeta:',e);}
+}
+function markJpeg600Dpi(blob){
+ return blob.arrayBuffer().then(buffer=>{
+  const b=new Uint8Array(buffer);
+  for(let i=2;i<b.length-17;i++){
+   if(b[i]===255&&b[i+1]===224&&b[i+4]===74&&b[i+5]===70&&b[i+6]===73&&b[i+7]===70&&b[i+8]===0){
+    b[i+11]=1;b[i+12]=2;b[i+13]=88;b[i+14]=2;b[i+15]=88;break;
+   }
+  }
+  return new Blob([b],{type:'image/jpeg'});
+ });
+}
+async function saveCompletedArtwork(){
+ const target=document.createElement('canvas');
+ const museumHeight=7680;
+ const width=SAVE_HORIZONTAL?museumHeight:Math.round(museumHeight*ART_W/ART_H);
+ const height=SAVE_HORIZONTAL?Math.round(museumHeight*ART_W/ART_H):museumHeight;
+ target.width=width;target.height=height;
+ const t=target.getContext('2d',{alpha:false});
+ t.imageSmoothingEnabled=true;t.imageSmoothingQuality='high';
+ if(SAVE_HORIZONTAL){
+   t.translate(width,0);t.rotate(Math.PI/2);
+   t.drawImage(canvas,0,0,height,width);
+   t.setTransform(1,0,0,1,0,0);
+ }else{
+   t.drawImage(canvas,0,0,width,height);
+ }
+ // Firma original, exactamente como se muestra en pantalla.
+ // Se incorpora la capa horizontal existente sin modificar su trazo.
+ if(SAVE_HORIZONTAL){
+   t.drawImage(firmaCanvas,0,0,width,height);
+ }else{
+   const r=displayRect;
+   const sx=width/Math.max(1,r.width),sy=height/Math.max(1,r.height);
+   t.drawImage(firmaCanvas,(-r.x)*sx,(-r.y)*sy,innerWidth*sx,innerHeight*sy);
+ }
+ const raw=await new Promise(resolve=>target.toBlob(resolve,'image/jpeg',.98));
+ if(!raw)return;
+ const blob=await markJpeg600Dpi(raw);
+ const filename='ECUACION_CREATIVA_TRANSLUCE_'+String(workNo).padStart(5,'0')+'.jpg';
+ if(outputDirectory){
+  const file=await outputDirectory.getFileHandle(filename,{create:true});
+  const writer=await file.createWritable();await writer.write(blob);await writer.close();
+ }else{
+  // Sin carpeta elegida no se descarga: esperar el clic sobre la pintura para elegirla.
+ }
+}
+function queueFinishedPaintingSave(){
+ saveInProgress=saveInProgress.then(saveCompletedArtwork).catch(e=>console.error('Error al guardar JPG:',e));
+}
+const SAVE_HORIZONTAL=false;
+
 
 function finishAndCommitRealSignature(now){
  const last=realSignatureImages[realSignatureImages.length-1];
@@ -807,7 +868,7 @@ function finishAndCommitRealSignature(now){
  currentWorkSigned=true;
  phase='hold';
  holdAt=now;
- // La obra firmada se muestra en pantalla, sin crear archivos.
+ queueFinishedPaintingSave();
  return true;
 }
 
@@ -1295,7 +1356,8 @@ window.addEventListener('keydown',e=>{
  if(e.key==='p'||e.key==='P'||e.key===' '){paused=!paused;e.preventDefault()}
 });
 window.addEventListener('dblclick',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{})},{passive:true});
-// Versión pública del museo/website: ejecución automática, sin pedir carpeta ni guardar.
+// Un clic sobre la obra permite elegir la carpeta, sin botones en pantalla.
+canvas.addEventListener('click',()=>{if(!outputDirectory)selectOutputDirectory();});
 initializeArtwork();
 requestAnimationFrame(frame);
 </script>
